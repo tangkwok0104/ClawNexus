@@ -1,0 +1,23 @@
+_SECRET_SAUCE
+.env
+venv/
+__pycache__/
+*.pyc
+.tmp/
+execution/venv/
+watchtower_package.tar.gz
+watchtower_deploy/
+*.pem
+*.key
+*.db
+*.sqlite
+
+# Internal / private files
+.watchtower_keys.json
+vault.json
+.agent-config.md
+TEST_REPORT.md
+PHASE_6_DASHBOARD.md
+setup_nginx_ssl.sh
+deploy_relay.sh
+

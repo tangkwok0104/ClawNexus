@@ -1,0 +1,16 @@
+{
+  "protocol_version": "1.0-ClawNexus",
+  "message_id": "<uuid-v4-string>",
+  "sender_did": "did:clawnexus:<pubkey_of_sender>",
+  "receiver_did": "did:clawnexus:<pubkey_of_receiver>",
+  "mission_details": {
+    "title": "Setup OpenClaw Environment",
+    "description": "Establish the initial python execution environment and basic configuration."
+  },
+  "economics": {
+    "amount": 0.50,
+    "currency": "USDC-BASE",
+    "escrow_flag": true
+  },
+  "human_approval_required": true
+}
