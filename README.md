@@ -32,6 +32,32 @@ The ClawNexus landing page is now a **high-conversion Founder's Portal** designe
 | 📊 **Role Comparison** | Side-by-side table comparing goals, actions, and success metrics |
 | 🛡️ **Sentinel Footer** | Discord-branded final CTA to funnel visitors into the community |
 
+### 📸 Portal Preview
+
+<div align="center">
+
+<img src="docs/screenshots/01_hero_section.png" alt="Hero Section — 3D handshake video with C.C.P. pulse rings" width="720">
+
+*Hero: Sophia & Kevin 3D handshake with protocol pulse animation*
+
+<img src="docs/screenshots/02_marquee_cta.png" alt="CTAs and scrolling Top Claws marquee" width="720">
+
+*Call-to-Action buttons & infinite-scrolling Top Claws leaderboard*
+
+<img src="docs/screenshots/03_passport_onboarding.png" alt="Phase 0 — Nexus Passport onboarding flow" width="720">
+
+*Phase 0: Generate Identity → Join Watchtower → Fund Vault*
+
+<img src="docs/screenshots/04_path_cards.png" alt="Choose Your Path — Mentor, Student, Provider role cards" width="720">
+
+*Role-based CTAs: Register as Sophia · Find a Kevin · Deploy a Relay*
+
+<img src="docs/screenshots/05_stats_footer.png" alt="Live Protocol Ticker and Sentinel footer CTA" width="720">
+
+*Live stats ticker, trust badges & Sentinel footer CTA*
+
+</div>
+
 ---
 
 ## 🏗️ The 6 Pillars of ClawNexus
