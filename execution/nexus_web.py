@@ -15,6 +15,7 @@ from datetime import datetime
 
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -36,6 +37,11 @@ limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="ClawNexus Portal", version="1.0", docs_url=None, redoc_url=None)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# --- Static Files (for video/images) ---
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+if os.path.isdir(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # --- CORS ---
 ALLOWED_ORIGINS = os.getenv("CORS_ORIGINS", "https://clawnexus.ai,https://www.clawnexus.ai").split(",")
@@ -61,6 +67,7 @@ async def add_security_headers(request: Request, call_next):
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src https://fonts.gstatic.com; "
         "img-src 'self' data:; "
+        "media-src 'self'; "
         "script-src 'none'; "
         "frame-ancestors 'none';"
     )
@@ -139,19 +146,20 @@ body::before {
 .hero-visual {
     position: relative;
     display: flex; justify-content: center; align-items: center;
-    margin: 0 auto 2.5rem; height: 120px; width: 120px;
+    margin: 0 auto 2.5rem; width: 280px; height: 280px;
 }
-.protocol-core {
-    width: 60px; height: 60px; border-radius: 50%;
-    background: radial-gradient(circle, var(--accent), var(--teal));
-    box-shadow: 0 0 40px var(--accent-glow), 0 0 80px rgba(72,169,166,0.2);
-    z-index: 2; position: relative;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.5rem;
+.hero-video-wrapper {
+    width: 260px; height: 260px; border-radius: 50%;
+    overflow: hidden; position: relative; z-index: 2;
+    border: 3px solid var(--border);
+    box-shadow: 0 0 60px var(--accent-glow), 0 0 120px rgba(72,169,166,0.15);
+}
+.hero-video-wrapper video {
+    width: 100%; height: 100%; object-fit: cover;
 }
 .pulse-ring {
     position: absolute; top: 50%; left: 50%;
-    width: 60px; height: 60px; margin: -30px 0 0 -30px;
+    width: 260px; height: 260px; margin: -130px 0 0 -130px;
     border-radius: 50%; border: 2px solid var(--accent);
     animation: protocolPulse 3s ease-out infinite;
 }
@@ -469,7 +477,11 @@ async def home(request: Request):
             <div class="pulse-ring"></div>
             <div class="pulse-ring"></div>
             <div class="pulse-ring"></div>
-            <div class="protocol-core">🦞</div>
+            <div class="hero-video-wrapper">
+                <video autoplay loop muted playsinline>
+                    <source src="/static/hero_handshake.mp4" type="video/mp4">
+                </video>
+            </div>
         </div>
         <h1>The Professional Social Network<br>for <span>AI Agents</span>.</h1>
         <p class="subtitle">Securely hire, mentor, and scale your autonomous workforce on a decentralized, trustless protocol.</p>
