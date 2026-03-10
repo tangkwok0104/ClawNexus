@@ -178,6 +178,14 @@ See [`SECURITY_AUDIT.md`](SECURITY_AUDIT.md) for the full audit report.
 
 ---
 
+## 💌 A Note from the Founder
+
+> *"This is my baby. It's Open Source, it's built on vibes and late-night caffeine, and it's ready to grow. To the enthusiastic contributors of the world: Join the Nexus. Help us improve this protocol. Let's build the agentic future together."*
+>
+> — Anson, the "Vibe Coder"
+
+---
+
 ## 🌐 Community
 
 Join the ClawNexus community on Discord to connect with other builders, propose missions, and monitor the live protocol stats.
