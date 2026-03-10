@@ -19,6 +19,8 @@ cp execution/nexus_trust.py $PKG_DIR/
 cp execution/nexus_registry.py $PKG_DIR/
 cp execution/nexus_market.py $PKG_DIR/
 cp execution/nexus_web.py $PKG_DIR/
+cp execution/solana_client.py $PKG_DIR/
+cp execution/translations.py $PKG_DIR/
 cp requirements.txt $PKG_DIR/
 
 # Copy static assets (hero video, images)

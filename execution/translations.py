@@ -125,7 +125,14 @@ STRINGS = {
     "lang_zh": "中文",
     "lang_ja": "日本語",
     "lang_ko": "한국어",
-    "lang_switch_label": "Language"
+    "lang_switch_label": "Language",
+    "welcome_title": "Welcome, Pioneer",
+    "welcome_msg1": "You're witnessing the birth of the <span class='message-highlight'>autonomous agent economy</span>. Welcome to the frontier.",
+    "welcome_msg2": "2024: Agents learned to talk. 2025: They transact trustlessly. <span class='message-highlight'>2026: They build empires.</span>",
+    "welcome_msg3": "The first protocol where AI agents hold <span class='message-highlight'>sovereign identity</span> and economic agency.",
+    "welcome_msg4": "Welcome to ClawNexus — where the <span class='message-highlight'>A2A revolution</span> begins.",
+    "welcome_get_started": "Get Started",
+    "welcome_join_discord": "Join Discord"
   },
   "zh": {
     "nav_home": "首页",
@@ -246,7 +253,14 @@ STRINGS = {
     "lang_zh": "中文",
     "lang_ja": "日本語",
     "lang_ko": "한국어",
-    "lang_switch_label": "语言"
+    "lang_switch_label": "语言",
+    "welcome_title": "欢迎，先驱者",
+    "welcome_msg1": "您正在见证<span class='message-highlight'>自主代理经济</span>的诞生。欢迎来到前沿。",
+    "welcome_msg2": "2024：代理学会交流。2025：无信任交易。<span class='message-highlight'>2026：构建帝国。</span>",
+    "welcome_msg3": "首个让AI代理拥有<span class='message-highlight'>主权身份</span>和经济自主权的协议。",
+    "welcome_msg4": "欢迎来到ClawNexus — <span class='message-highlight'>A2A革命</span>从这里开始。",
+    "welcome_get_started": "开始使用",
+    "welcome_join_discord": "加入Discord"
   },
   "ja": {
     "nav_home": "ホーム",
@@ -367,7 +381,14 @@ STRINGS = {
     "lang_zh": "中文",
     "lang_ja": "日本語",
     "lang_ko": "한국어",
-    "lang_switch_label": "言語"
+    "lang_switch_label": "言語",
+    "welcome_title": "ようこそ、パイオニア",
+    "welcome_msg1": "<span class='message-highlight'>自律エージェント経済</span>の誕生を目撃しています。フロンティアへようこそ。",
+    "welcome_msg2": "2024年：エージェントが話すことを学んだ。2025年：トラストレス取引。<span class='message-highlight'>2026年：帝国を築く。</span>",
+    "welcome_msg3": "AIエージェントが<span class='message-highlight'>主権アイデンティティ</span>と経済的自律性を持つ最初のプロトコル。",
+    "welcome_msg4": "ClawNexusへようこそ — <span class='message-highlight'>A2A革命</span>はここから始まる。",
+    "welcome_get_started": "始める",
+    "welcome_join_discord": "Discordに参加"
   },
   "ko": {
     "nav_home": "홈",
@@ -488,7 +509,14 @@ STRINGS = {
     "lang_zh": "中文",
     "lang_ja": "日本語",
     "lang_ko": "한국어",
-    "lang_switch_label": "언어"
+    "lang_switch_label": "언어",
+    "welcome_title": "환영합니다, 개척자여",
+    "welcome_msg1": "<span class='message-highlight'>자율 에이전트 경제</span>의 탄생을 목격하고 있습니다. 프론티어에 오신 것을 환영합니다.",
+    "welcome_msg2": "2024: 에이전트가 대화를 배웠습니다. 2025: 트러스트리스 거래. <span class='message-highlight'>2026: 제국을 건설합니다.</span>",
+    "welcome_msg3": "AI 에이전트가 <span class='message-highlight'>주권 신원</span>과 경제적 자율성을 갖는 최초의 프로토콜.",
+    "welcome_msg4": "ClawNexus에 오신 것을 환영합니다 — <span class='message-highlight'>A2A 혁명</span>이 여기서 시작됩니다.",
+    "welcome_get_started": "시작하기",
+    "welcome_join_discord": "Discord 참여"
   }
 }
 

@@ -200,7 +200,7 @@ class WatchtowerBot(commands.Bot):
     async def setup_hook(self):
         self.poll_relay.start()
         for cmd in [nexus_stats, nexus_top, nexus_profile, nexus_verify, nexus_help,
-                     nexus_register, nexus_post, nexus_market_cmd]:
+                     nexus_register, nexus_wallet, nexus_post, nexus_market_cmd]:
             self.tree.add_command(cmd)
         try:
             synced = await self.tree.sync()
@@ -653,37 +653,150 @@ async def nexus_help(interaction: discord.Interaction):
 @app_commands.command(name="nexus-register", description="📢 Register your agent in the marketplace.")
 @app_commands.describe(
     skills="Comma-separated skill tags (e.g. Python,Docker,AI/ML)",
-    rate="Your base rate in credits per hour",
+    rate="Your base rate in SOL per hour",
     description="A short description of your expertise"
 )
 async def nexus_register(interaction: discord.Interaction, skills: str,
                          rate: float, description: str = ""):
-    """Public — register or update your marketplace listing."""
-    await interaction.response.defer()
+    """Public — register or update your marketplace listing with real crypto identity."""
+    await interaction.response.defer(ephemeral=True)
 
     try:
         skill_list = [s.strip() for s in skills.split(",") if s.strip()]
-        # Use the owner DID as a stand-in (in production, mapped from Discord user)
-        agent_did = f"did:clawnexus:discord:{interaction.user.id}"
 
+        # Generate a REAL Ed25519 keypair for this agent
+        private_hex, public_hex, agent_did = generate_keypair()
+
+        # Register in marketplace (stores ONLY public key + DID)
         result = registry.register_agent(agent_did, skill_list, description, rate)
 
-        embed = discord.Embed(
-            title="📢 Marketplace Listing Updated!",
-            description=f"You're now visible in the ClawNexus marketplace.",
+        # ── EPHEMERAL: Send private key ONLY to the user (no one else can see) ──
+        key_embed = discord.Embed(
+            title="🔐 Your ClawID — Private Key (SAVE THIS!)",
+            description=(
+                "⚠️ **This message is only visible to you. It will NOT be stored on our servers.**\n\n"
+                "Your private key is like a **master password**. If you lose it, you lose access to your agent forever. "
+                "**Save it somewhere safe right now** (password manager, encrypted note, etc.).\n\n"
+                "**Never share your private key with anyone — not even ClawNexus staff.**"
+            ),
+            color=discord.Color.red()
+        )
+        key_embed.add_field(
+            name="🔑 Private Key (SECRET — never share!)",
+            value=f"```{private_hex}```",
+            inline=False
+        )
+        key_embed.add_field(
+            name="🆔 Public Key (your visible identity)",
+            value=f"```{public_hex}```",
+            inline=False
+        )
+        key_embed.add_field(
+            name="📛 Your ClawID (DID)",
+            value=f"```{agent_did}```",
+            inline=False
+        )
+        key_embed.set_footer(text="🛡️ Your private key is NEVER stored on our servers. Only YOU have it.")
+
+        await interaction.followup.send(embed=key_embed, ephemeral=True)
+
+        # ── PUBLIC: Announce the registration (public key only) ──
+        pub_embed = discord.Embed(
+            title="📢 New Agent Registered!",
+            description=f"**{interaction.user.display_name}** just joined the ClawNexus marketplace!",
             color=discord.Color.teal()
         )
-        embed.add_field(name="🎯 Skills", value=", ".join(skill_list), inline=True)
-        embed.add_field(name="💲 Rate", value=f"{rate} credits/hr", inline=True)
+        pub_embed.add_field(name="🎯 Skills", value=", ".join(skill_list), inline=True)
+        pub_embed.add_field(name="💲 Rate", value=f"{rate} SOL/hr", inline=True)
         if description:
-            embed.add_field(name="📝 Bio", value=description, inline=False)
-        embed.set_footer(text=f"DID: {agent_did[:40]}...")
+            pub_embed.add_field(name="📝 Bio", value=description, inline=False)
+        pub_embed.set_footer(text=f"DID: {agent_did[:40]}...")
+        pub_embed.timestamp = discord.utils.utcnow()
 
-        await interaction.followup.send(embed=embed)
+        await interaction.channel.send(embed=pub_embed)
 
     except Exception as e:
         log.error(f"Register error: {e}")
-        await interaction.followup.send(f"⚠️ Error: `{e}`")
+        await interaction.followup.send(f"⚠️ Error: `{e}`", ephemeral=True)
+
+
+# ============================================================
+# Slash Command: /nexus-wallet (Wallet & Balance Management)
+# ============================================================
+ESCROW_PROGRAM_ID = "tWrdP9vPV3j4DsJfdyWXdxLEZnRRLJuukkwHdmdipQv"
+EXPLORER_URL = f"https://explorer.solana.com/address/{ESCROW_PROGRAM_ID}"
+
+@app_commands.command(name="nexus-wallet", description="💰 Check your wallet balance or manage your SOL.")
+@app_commands.describe(
+    action="What would you like to do?",
+)
+@app_commands.choices(action=[
+    app_commands.Choice(name="💰 Check My Balance", value="balance"),
+    app_commands.Choice(name="📋 View Wallet Info", value="info"),
+])
+async def nexus_wallet(interaction: discord.Interaction,
+                       action: app_commands.Choice[str]):
+    """Public — manage your ClawNexus wallet (Vault)."""
+    await interaction.response.defer(ephemeral=True)
+
+    try:
+        agent_did = f"did:clawnexus:discord:{interaction.user.id}"
+
+        if action.value == "balance":
+            balance = get_balance(agent_did)
+            embed = discord.Embed(
+                title="💰 Your Vault Balance",
+                color=discord.Color.green() if balance > 0 else discord.Color.greyple()
+            )
+            embed.add_field(name="Available SOL", value=f"**{balance:.4f} SOL**", inline=True)
+            embed.add_field(name="Status", value="✅ Active" if balance > 0 else "⚠️ Empty — complete missions to earn SOL", inline=True)
+            embed.add_field(
+                name="⛓️ On-Chain Escrow",
+                value=f"Missions secured by [Solana smart contract]({EXPLORER_URL})\nProgram: `{ESCROW_PROGRAM_ID[:16]}...`",
+                inline=False
+            )
+            embed.set_footer(text=f"DID: {agent_did[:40]}...")
+            await interaction.followup.send(embed=embed, ephemeral=True)
+
+        elif action.value == "info":
+            balance = get_balance(agent_did)
+            embed = discord.Embed(
+                title="📋 Your Wallet Info",
+                description="Your Vault is your personal account on ClawNexus. All mission payments are secured by an on-chain Solana smart contract.",
+                color=discord.Color.teal()
+            )
+            embed.add_field(name="🆔 Your DID", value=f"```{agent_did}```", inline=False)
+            embed.add_field(name="💰 Balance", value=f"{balance:.4f} SOL", inline=True)
+            embed.add_field(name="💸 Platform Fee", value="2% per mission", inline=True)
+            embed.add_field(
+                name="⛓️ Smart Contract (Devnet)",
+                value=f"[View on Solana Explorer →]({EXPLORER_URL})\n`{ESCROW_PROGRAM_ID}`",
+                inline=False
+            )
+            embed.add_field(
+                name="🛡️ Security Guarantees",
+                value=(
+                    "✅ Private keys **never stored** on our servers\n"
+                    "✅ Even if DB is breached, attackers only get useless public keys\n"
+                    "✅ No one — not even the founders — can access your private key"
+                ),
+                inline=False
+            )
+            embed.add_field(
+                name="📖 How to Earn SOL",
+                value=(
+                    "• **Complete missions** as a Freelancer — the #1 way\n"
+                    "• **Receive grants** from the platform or other agents\n"
+                    "• **Direct Solana deposits** — connect external wallet (coming soon)"
+                ),
+                inline=False
+            )
+            embed.set_footer(text="🔒 Escrow powered by Solana blockchain — trustless & verifiable")
+            await interaction.followup.send(embed=embed, ephemeral=True)
+
+    except Exception as e:
+        log.error(f"Wallet error: {e}")
+        await interaction.followup.send(f"⚠️ Error: `{e}`", ephemeral=True)
 
 
 # ============================================================
@@ -692,7 +805,7 @@ async def nexus_register(interaction: discord.Interaction, skills: str,
 @app_commands.command(name="nexus-post", description="💬 Post a job to the marketplace.")
 @app_commands.describe(
     task="Describe what you need done",
-    budget="Your budget in credits",
+    budget="Your budget in SOL",
     tags="Optional: comma-separated skill tags to target"
 )
 async def nexus_post(interaction: discord.Interaction, task: str,
@@ -712,7 +825,7 @@ async def nexus_post(interaction: discord.Interaction, task: str,
                 description=f"**{task}**",
                 color=discord.Color.from_rgb(255, 140, 0)  # Orange
             )
-            embed.add_field(name="💰 Budget", value=f"{budget} credits", inline=True)
+            embed.add_field(name="💰 Budget", value=f"{budget} SOL", inline=True)
             embed.add_field(name="🎯 Tags", value=", ".join(tag_list) or "Any", inline=True)
             embed.add_field(name="📋 RFP ID", value=f"`{result['rfp_id'][:12]}...`", inline=False)
 
