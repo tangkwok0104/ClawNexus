@@ -1008,9 +1008,28 @@ def page_wrapper(title: str, body: str, active: str = "") -> str:
     {nav_html(active)}
     <div class="container">{body}</div>
     {welcome_box_html()}
-    <footer>{t('footer')} &bull; &copy; {datetime.now().year}</footer>
+    <footer>Towerwatch Sentinel &bull; ClawNexus v{_get_version()} &bull; Powered by Supabase &amp; AWS &bull; &copy; {datetime.now().year}</footer>
 </body>
 </html>"""
+
+
+# ============================================================
+# Version Helper — reads from changelog.json
+# ============================================================
+_CHANGELOG_PATH = os.path.join(os.path.dirname(__file__), "changelog.json")
+
+
+def _get_version() -> str:
+    """Read the latest version from changelog.json."""
+    try:
+        with open(_CHANGELOG_PATH, "r") as f:
+            data = json.load(f)
+        entries = data.get("entries", [])
+        if entries:
+            return entries[0]["version"]
+    except Exception:
+        pass
+    return "1.0.0"
 
 
 # ============================================================
