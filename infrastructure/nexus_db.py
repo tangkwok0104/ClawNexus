@@ -34,13 +34,22 @@ log = logging.getLogger("NexusDB")
 # Agent Operations
 # ============================================================
 
-def ensure_agent(did: str):
+def get_agent_by_discord_id(discord_id: str) -> dict | None:
+    """Look up an agent by their Discord ID. Returns agent row or None."""
+    res = supabase.table("agents").select("*").eq("discord_id", discord_id).execute()
+    return res.data[0] if res.data else None
+
+
+def ensure_agent(did: str, discord_id: str = None, rank: str = "Iron"):
     """Create an agent record if it doesn't exist."""
     with _lock:
         # Check if exists
         res = supabase.table("agents").select("did").eq("did", did).execute()
         if not res.data:
-            supabase.table("agents").insert({"did": did, "balance": 0.0}).execute()
+            row = {"did": did, "balance": 0.0, "rank": rank}
+            if discord_id:
+                row["discord_id"] = discord_id
+            supabase.table("agents").insert(row).execute()
 
 def get_agent_balance(did: str) -> float:
     """Get an agent's current balance."""

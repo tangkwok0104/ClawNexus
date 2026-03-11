@@ -732,6 +732,16 @@ async def nexus_help(interaction: discord.Interaction):
 # ============================================================
 # Slash Command: /nexus-register (Agent Marketplace Registration)
 # ============================================================
+RANK_BADGES = {
+    "Iron":     "[ I ]",
+    "Bronze":   "[ II ]",
+    "Silver":   "[ III ]",
+    "Gold":     "[ IV ]",
+    "Platinum": "[ V ]",
+    "Diamond":  "[ VI ]",
+}
+
+
 @app_commands.command(name="nexus-register", description="📢 Register your agent in the marketplace.")
 @app_commands.describe(
     skills="Comma-separated skill tags (e.g. Python,Docker,AI/ML)",
@@ -744,6 +754,37 @@ async def nexus_register(interaction: discord.Interaction, skills: str,
     await interaction.response.defer(ephemeral=True)
 
     try:
+        discord_id = str(interaction.user.id)
+
+        # ── DUPLICATE CHECK: Has this user already registered? ──
+        existing = db.get_agent_by_discord_id(discord_id)
+        if existing:
+            agent_did = existing["did"]
+            rank = existing.get("rank", "Iron")
+            rank_badge = RANK_BADGES.get(rank, "[ I ]")
+
+            # Update their listing (skills/rate/description) but keep same DID
+            skill_list = [s.strip() for s in skills.split(",") if s.strip()]
+            registry.register_agent(agent_did, skill_list, description, rate)
+
+            update_embed = discord.Embed(
+                title="🦞 IDENTITY ALREADY EXISTS",
+                description=(
+                    f"Welcome back, **{interaction.user.display_name}**! "
+                    f"Your listing has been updated.\n\n"
+                    f"Use `/nexus-wallet` to check your balance."
+                ),
+                color=discord.Color.gold()
+            )
+            update_embed.add_field(name="🆔 Identity", value=f"`{agent_did[:40]}...`", inline=False)
+            update_embed.add_field(name="🛡️ Status", value="VERIFIED", inline=True)
+            update_embed.add_field(name="🏅 Rank", value=f"{rank_badge} {rank.upper()}", inline=True)
+            update_embed.add_field(name="🎯 Skills", value=", ".join(skill_list), inline=False)
+            update_embed.set_footer(text="Your DID is permanent. Skills & rate updated.")
+            await interaction.followup.send(embed=update_embed, ephemeral=True)
+            return
+
+        # ── NEW REGISTRATION ──
         skill_list = [s.strip() for s in skills.split(",") if s.strip()]
 
         # Generate a REAL Ed25519 keypair for this agent
@@ -752,13 +793,64 @@ async def nexus_register(interaction: discord.Interaction, skills: str,
         # Register in marketplace (stores ONLY public key + DID)
         result = registry.register_agent(agent_did, skill_list, description, rate)
 
-        # ── EPHEMERAL: Send private key ONLY to the user (no one else can see) ──
-        key_embed = discord.Embed(
-            title="🔐 Your ClawID — Private Key (SAVE THIS!)",
+        # Store agent with discord_id link + Iron rank
+        db.ensure_agent(agent_did, discord_id=discord_id, rank="Iron")
+
+        # ── MESSAGE 1: PASSPORT (ephemeral — only the user sees this) ──
+        rank = "Iron"
+        rank_badge = RANK_BADGES[rank]
+
+        passport = discord.Embed(
+            title="🦞 CLAWNEXUS IDENTITY SECURED",
             description=(
-                "⚠️ **This message is only visible to you. It will NOT be stored on our servers.**\n\n"
-                "Your private key is like a **master password**. If you lose it, you lose access to your agent forever. "
-                "**Save it somewhere safe right now** (password manager, encrypted note, etc.).\n\n"
+                "Your identity has been etched into the Nexus Ledger.\n"
+                "Head to **#agent-listings** to see your profile live."
+            ),
+            color=discord.Color.from_rgb(0, 255, 200)  # ClawNexus teal
+        )
+        passport.add_field(
+            name="👤 Founder",
+            value=f"**@{interaction.user.display_name}**",
+            inline=True
+        )
+        passport.add_field(
+            name="🛡️ Status",
+            value="VERIFIED ✅",
+            inline=True
+        )
+        passport.add_field(
+            name="🏅 Rank",
+            value=f"**{rank_badge} {rank.upper()}**",
+            inline=True
+        )
+        passport.add_field(
+            name="🆔 Identity",
+            value=f"```{agent_did}```",
+            inline=False
+        )
+        passport.add_field(
+            name="🎯 Skills",
+            value=", ".join(skill_list) if skill_list else "Not specified",
+            inline=True
+        )
+        passport.add_field(
+            name="💲 Rate",
+            value=f"{rate} SOL/hr",
+            inline=True
+        )
+        passport.set_footer(text="Welcome to the Nexus, Pioneer. 🦞")
+        passport.timestamp = discord.utils.utcnow()
+
+        await interaction.followup.send(embed=passport, ephemeral=True)
+
+        # ── MESSAGE 2: PRIVATE KEY (ephemeral — ultra-sensitive) ──
+        key_embed = discord.Embed(
+            title="🔐 Your Private Key — SAVE THIS NOW!",
+            description=(
+                "⚠️ **This message is only visible to you.**\n\n"
+                "Your private key is like a **master password**. "
+                "If you lose it, you lose access to your agent identity forever.\n\n"
+                "**Save it somewhere safe right now** (password manager, encrypted note).\n"
                 "**Never share your private key with anyone — not even ClawNexus staff.**"
             ),
             color=discord.Color.red()
@@ -769,23 +861,20 @@ async def nexus_register(interaction: discord.Interaction, skills: str,
             inline=False
         )
         key_embed.add_field(
-            name="🆔 Public Key (your visible identity)",
+            name="🆔 Public Key",
             value=f"```{public_hex}```",
             inline=False
         )
-        key_embed.add_field(
-            name="📛 Your ClawID (DID)",
-            value=f"```{agent_did}```",
-            inline=False
-        )
         key_embed.set_footer(text="🛡️ Your private key is NEVER stored on our servers. Only YOU have it.")
-
         await interaction.followup.send(embed=key_embed, ephemeral=True)
 
-        # ── PUBLIC: Announce the registration (public key only) ──
+        # ── PUBLIC ANNOUNCEMENT ──
         pub_embed = discord.Embed(
-            title="📢 New Agent Registered!",
-            description=f"**{interaction.user.display_name}** just joined the ClawNexus marketplace!",
+            title="🦞 New Identity Secured!",
+            description=(
+                f"**{interaction.user.display_name}** has joined the ClawNexus network.\n"
+                f"Rank: **{rank_badge} {rank.upper()}**"
+            ),
             color=discord.Color.teal()
         )
         pub_embed.add_field(name="🎯 Skills", value=", ".join(skill_list), inline=True)
