@@ -33,11 +33,11 @@ const MIN_ESCROW_LAMPORTS: u64 = 10_000_000;
 const MAX_ESCROW_LAMPORTS: u64 = 100_000_000_000;
 
 /// Platform treasury public key — hardcoded to prevent spoofing
-/// TODO: Replace with actual treasury before mainnet deploy
+/// Treasury: HCyBAE2rnqbcH87KTvwGGZ7EMZZHxxLGtVyQDtwFCEXC
 const PLATFORM_TREASURY: Pubkey = Pubkey::new_from_array([
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-]); // PLACEHOLDER — will be replaced with real treasury bytes
+    240, 203, 229, 173, 30, 40, 207, 7, 34, 30, 111, 244, 107, 233, 66, 162,
+    222, 152, 199, 246, 27, 219, 70, 75, 176, 198, 88, 216, 227, 33, 243, 195,
+]);
 
 // ============================================================
 // Program Instructions
