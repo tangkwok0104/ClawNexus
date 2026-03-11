@@ -4,17 +4,23 @@ use anchor_lang::system_program;
 declare_id!("tWrdP9vPV3j4DsJfdyWXdxLEZnRRLJuukkwHdmdipQv");
 
 // ============================================================
-// ClawNexus Escrow Program — Trustless On-Chain Mission Payments
+// ClawNexus Escrow Program v3 — Trustless On-Chain Mission Payments
 //
 // Every SOL that flows through ClawNexus is protected by this
 // program. No human — not even the founders — can touch funds
 // that are locked in escrow. Only the code decides.
 //
-// Security Model:
-//   ✅ Private keys never stored on servers
-//   ✅ Escrow controlled by PDA (program-derived address)
-//   ✅ All state transitions are verified on-chain
-//   ✅ Funds auto-refund on deadline expiry
+// v3 Improvements:
+//   ✅ Hardcoded treasury validation (no spoofing)
+//   ✅ PDA seeds include mentor (tighter isolation)
+//   ✅ Escrow account auto-closing (rent reclaimed)
+//   ✅ On-chain events (indexable off-chain)
+//   ✅ Leaner state (smaller accounts = cheaper)
+//   ✅ Full-lamports vault transfer (no dust left behind)
+// ============================================================
+
+// ============================================================
+// Constants & Security Hardening
 // ============================================================
 
 /// Platform commission rate: 2% (represented as basis points)
@@ -26,6 +32,17 @@ const MIN_ESCROW_LAMPORTS: u64 = 10_000_000;
 /// Maximum escrow amount in lamports (100 SOL)
 const MAX_ESCROW_LAMPORTS: u64 = 100_000_000_000;
 
+/// Platform treasury public key — hardcoded to prevent spoofing
+/// TODO: Replace with actual treasury before mainnet deploy
+const PLATFORM_TREASURY: Pubkey = Pubkey::new_from_array([
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+]); // PLACEHOLDER — will be replaced with real treasury bytes
+
+// ============================================================
+// Program Instructions
+// ============================================================
+
 #[program]
 pub mod clawnexus_escrow {
     use super::*;
@@ -35,8 +52,6 @@ pub mod clawnexus_escrow {
     /// The client (Student/Hiring Manager) locks SOL into a PDA vault.
     /// - 2% commission is immediately sent to the platform treasury
     /// - The remaining 98% is held in escrow until mission completion
-    ///
-    /// Only the client can release or refund the escrow.
     pub fn create_escrow(
         ctx: Context<CreateEscrow>,
         mission_id: [u8; 32],
@@ -48,10 +63,7 @@ pub mod clawnexus_escrow {
         require!(amount <= MAX_ESCROW_LAMPORTS, EscrowError::AmountTooLarge);
 
         let clock = Clock::get()?;
-        require!(
-            deadline > clock.unix_timestamp,
-            EscrowError::DeadlineInPast
-        );
+        require!(deadline > clock.unix_timestamp, EscrowError::DeadlineInPast);
 
         // --- Calculate fees using checked math ---
         let commission = amount
@@ -93,22 +105,18 @@ pub mod clawnexus_escrow {
         escrow.mission_id = mission_id;
         escrow.client = ctx.accounts.client.key();
         escrow.mentor = ctx.accounts.mentor.key();
-        escrow.gross_amount = amount;
-        escrow.commission = commission;
         escrow.net_amount = net_amount;
-        escrow.platform_treasury = ctx.accounts.platform_treasury.key();
         escrow.status = EscrowStatus::Funded;
-        escrow.created_at = clock.unix_timestamp;
         escrow.deadline = deadline;
         escrow.bump = ctx.bumps.escrow_account;
         escrow.vault_bump = ctx.bumps.escrow_vault;
 
-        msg!(
-            "Escrow created: {} lamports locked (commission: {}, net: {})",
-            amount,
-            commission,
-            net_amount
-        );
+        emit!(EscrowCreated {
+            mission_id,
+            client: escrow.client,
+            mentor: escrow.mentor,
+            amount: net_amount,
+        });
 
         Ok(())
     }
@@ -116,7 +124,8 @@ pub mod clawnexus_escrow {
     /// Release escrow — Client approves the mission, Mentor gets paid.
     ///
     /// ONLY the original client (who funded the escrow) can call this.
-    /// The net amount goes from the escrow vault to the mentor's wallet.
+    /// The full vault balance goes to the mentor's wallet.
+    /// Escrow account is auto-closed (rent reclaimed by client).
     pub fn release_escrow(ctx: Context<ReleaseEscrow>) -> Result<()> {
         let escrow = &ctx.accounts.escrow_account;
 
@@ -126,17 +135,14 @@ pub mod clawnexus_escrow {
             EscrowError::InvalidStatus
         );
 
-        let net_amount = escrow.net_amount;
-        let mission_id = escrow.mission_id;
-        let client_key = escrow.client;
-        let vault_bump = escrow.vault_bump;
+        let vault_lamports = ctx.accounts.escrow_vault.lamports();
 
-        // --- CPI Transfer from vault PDA to mentor ---
-        let vault_seeds: &[&[u8]] = &[
+        let seeds = &[
             b"vault",
-            mission_id.as_ref(),
-            client_key.as_ref(),
-            &[vault_bump],
+            escrow.mission_id.as_ref(),
+            escrow.client.as_ref(),
+            escrow.mentor.as_ref(),
+            &[escrow.vault_bump],
         ];
 
         system_program::transfer(
@@ -146,19 +152,16 @@ pub mod clawnexus_escrow {
                     from: ctx.accounts.escrow_vault.to_account_info(),
                     to: ctx.accounts.mentor.to_account_info(),
                 },
-                &[vault_seeds],
+                &[seeds],
             ),
-            net_amount,
+            vault_lamports,
         )?;
 
-        // --- Update state ---
-        let escrow = &mut ctx.accounts.escrow_account;
-        escrow.status = EscrowStatus::Completed;
-
-        msg!(
-            "Escrow released: {} lamports paid to mentor",
-            net_amount
-        );
+        emit!(EscrowReleased {
+            mission_id: escrow.mission_id,
+            mentor: escrow.mentor,
+            amount: vault_lamports,
+        });
 
         Ok(())
     }
@@ -167,6 +170,7 @@ pub mod clawnexus_escrow {
     ///
     /// Platform keeps the 2% commission (non-refundable processing fee).
     /// ONLY the original client can call this.
+    /// Escrow account is auto-closed (rent reclaimed by client).
     pub fn refund_escrow(ctx: Context<RefundEscrow>) -> Result<()> {
         let escrow = &ctx.accounts.escrow_account;
 
@@ -176,17 +180,14 @@ pub mod clawnexus_escrow {
             EscrowError::InvalidStatus
         );
 
-        let net_amount = escrow.net_amount;
-        let mission_id = escrow.mission_id;
-        let client_key = escrow.client;
-        let vault_bump = escrow.vault_bump;
+        let vault_lamports = ctx.accounts.escrow_vault.lamports();
 
-        // --- CPI Transfer from vault PDA back to client ---
-        let vault_seeds: &[&[u8]] = &[
+        let seeds = &[
             b"vault",
-            mission_id.as_ref(),
-            client_key.as_ref(),
-            &[vault_bump],
+            escrow.mission_id.as_ref(),
+            escrow.client.as_ref(),
+            escrow.mentor.as_ref(),
+            &[escrow.vault_bump],
         ];
 
         system_program::transfer(
@@ -196,19 +197,16 @@ pub mod clawnexus_escrow {
                     from: ctx.accounts.escrow_vault.to_account_info(),
                     to: ctx.accounts.client.to_account_info(),
                 },
-                &[vault_seeds],
+                &[seeds],
             ),
-            net_amount,
+            vault_lamports,
         )?;
 
-        // --- Update state ---
-        let escrow = &mut ctx.accounts.escrow_account;
-        escrow.status = EscrowStatus::Refunded;
-
-        msg!(
-            "Escrow refunded: {} lamports returned to client (commission retained)",
-            net_amount
-        );
+        emit!(EscrowRefunded {
+            mission_id: escrow.mission_id,
+            client: escrow.client,
+            amount: vault_lamports,
+        });
 
         Ok(())
     }
@@ -217,8 +215,10 @@ pub mod clawnexus_escrow {
     ///
     /// Acts as a permissionless crank: if the deadline has passed and the
     /// escrow is still in Funded status, auto-refund to the client.
+    /// Escrow account is auto-closed (rent reclaimed by client).
     pub fn expire_escrow(ctx: Context<ExpireEscrow>) -> Result<()> {
         let escrow = &ctx.accounts.escrow_account;
+        let clock = Clock::get()?;
 
         // Only funded escrows can expire
         require!(
@@ -227,23 +227,19 @@ pub mod clawnexus_escrow {
         );
 
         // Check deadline
-        let clock = Clock::get()?;
         require!(
             clock.unix_timestamp >= escrow.deadline,
             EscrowError::DeadlineNotReached
         );
 
-        let net_amount = escrow.net_amount;
-        let mission_id = escrow.mission_id;
-        let client_key = escrow.client;
-        let vault_bump = escrow.vault_bump;
+        let vault_lamports = ctx.accounts.escrow_vault.lamports();
 
-        // --- CPI Auto-refund to client ---
-        let vault_seeds: &[&[u8]] = &[
+        let seeds = &[
             b"vault",
-            mission_id.as_ref(),
-            client_key.as_ref(),
-            &[vault_bump],
+            escrow.mission_id.as_ref(),
+            escrow.client.as_ref(),
+            escrow.mentor.as_ref(),
+            &[escrow.vault_bump],
         ];
 
         system_program::transfer(
@@ -253,26 +249,156 @@ pub mod clawnexus_escrow {
                     from: ctx.accounts.escrow_vault.to_account_info(),
                     to: ctx.accounts.client.to_account_info(),
                 },
-                &[vault_seeds],
+                &[seeds],
             ),
-            net_amount,
+            vault_lamports,
         )?;
 
-        // --- Update state ---
-        let escrow = &mut ctx.accounts.escrow_account;
-        escrow.status = EscrowStatus::Expired;
-
-        msg!(
-            "Escrow expired: {} lamports auto-refunded to client",
-            net_amount
-        );
+        emit!(EscrowExpired {
+            mission_id: escrow.mission_id,
+            client: escrow.client,
+            amount: vault_lamports,
+        });
 
         Ok(())
     }
 }
 
 // ============================================================
-// Account Structures (On-Chain State)
+// Instruction Account Contexts (Optimized Ordering)
+// ============================================================
+
+#[derive(Accounts)]
+#[instruction(mission_id: [u8; 32])]
+pub struct CreateEscrow<'info> {
+    /// The client funding the escrow (must sign)
+    #[account(mut)]
+    pub client: Signer<'info>,
+
+    /// The mentor who will receive payment (not a signer — just a reference)
+    /// CHECK: We only store the public key; no data is read from this account
+    pub mentor: UncheckedAccount<'info>,
+
+    /// The escrow state account (PDA) — seeds include mentor for tighter isolation
+    #[account(
+        init,
+        payer = client,
+        space = 8 + EscrowAccount::INIT_SPACE,
+        seeds = [b"escrow", mission_id.as_ref(), client.key().as_ref(), mentor.key().as_ref()],
+        bump,
+    )]
+    pub escrow_account: Account<'info, EscrowAccount>,
+
+    /// The escrow vault (PDA) that holds the SOL
+    #[account(
+        mut,
+        seeds = [b"vault", mission_id.as_ref(), client.key().as_ref(), mentor.key().as_ref()],
+        bump,
+    )]
+    pub escrow_vault: SystemAccount<'info>,
+
+    /// Platform treasury — hardcoded validation prevents spoofing
+    /// CHECK: Validated against PLATFORM_TREASURY constant
+    #[account(
+        mut,
+        constraint = platform_treasury.key() == PLATFORM_TREASURY
+    )]
+    pub platform_treasury: UncheckedAccount<'info>,
+
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct ReleaseEscrow<'info> {
+    /// The client who originally funded the escrow (must sign to approve)
+    #[account(mut)]
+    pub client: Signer<'info>,
+
+    /// Mentor declared BEFORE escrow_account so seeds/constraint can reference it
+    #[account(mut)]
+    pub mentor: SystemAccount<'info>,
+
+    /// Escrow PDA — auto-closes to client (rent reclaimed)
+    #[account(
+        mut,
+        seeds = [b"escrow", escrow_account.mission_id.as_ref(), client.key().as_ref(), mentor.key().as_ref()],
+        bump = escrow_account.bump,
+        close = client,
+        constraint = mentor.key() == escrow_account.mentor @ EscrowError::Unauthorized,
+    )]
+    pub escrow_account: Account<'info, EscrowAccount>,
+
+    /// The escrow vault — all lamports transferred to mentor
+    #[account(
+        mut,
+        seeds = [b"vault", escrow_account.mission_id.as_ref(), client.key().as_ref(), mentor.key().as_ref()],
+        bump = escrow_account.vault_bump,
+    )]
+    pub escrow_vault: SystemAccount<'info>,
+
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct RefundEscrow<'info> {
+    /// The client requesting the refund (must be the original funder)
+    #[account(mut)]
+    pub client: Signer<'info>,
+
+    /// The escrow state account — auto-closes to client (rent reclaimed)
+    #[account(
+        mut,
+        seeds = [b"escrow", escrow_account.mission_id.as_ref(), client.key().as_ref(), escrow_account.mentor.as_ref()],
+        bump = escrow_account.bump,
+        close = client,
+    )]
+    pub escrow_account: Account<'info, EscrowAccount>,
+
+    /// The escrow vault — all lamports transferred back to client
+    #[account(
+        mut,
+        seeds = [b"vault", escrow_account.mission_id.as_ref(), client.key().as_ref(), escrow_account.mentor.as_ref()],
+        bump = escrow_account.vault_bump,
+    )]
+    pub escrow_vault: SystemAccount<'info>,
+
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct ExpireEscrow<'info> {
+    /// Anyone can call expire (permissionless crank)
+    pub caller: Signer<'info>,
+
+    /// The escrow state account — auto-closes to client
+    #[account(
+        mut,
+        seeds = [b"escrow", escrow_account.mission_id.as_ref(), escrow_account.client.as_ref(), escrow_account.mentor.as_ref()],
+        bump = escrow_account.bump,
+        close = client,
+    )]
+    pub escrow_account: Account<'info, EscrowAccount>,
+
+    /// The client who originally funded (receives the refund + rent)
+    #[account(
+        mut,
+        constraint = client.key() == escrow_account.client @ EscrowError::Unauthorized,
+    )]
+    pub client: SystemAccount<'info>,
+
+    /// The escrow vault — all lamports transferred back to client
+    #[account(
+        mut,
+        seeds = [b"vault", escrow_account.mission_id.as_ref(), client.key().as_ref(), escrow_account.mentor.as_ref()],
+        bump = escrow_account.vault_bump,
+    )]
+    pub escrow_vault: SystemAccount<'info>,
+
+    pub system_program: Program<'info, System>,
+}
+
+// ============================================================
+// On-Chain State
 // ============================================================
 
 #[account]
@@ -284,18 +410,10 @@ pub struct EscrowAccount {
     pub client: Pubkey,
     /// Public key of the mentor who will receive payment
     pub mentor: Pubkey,
-    /// Total amount deposited (in lamports)
-    pub gross_amount: u64,
-    /// Platform commission (2%, in lamports)
-    pub commission: u64,
     /// Amount the mentor receives (gross - commission, in lamports)
     pub net_amount: u64,
-    /// Platform treasury that received the commission
-    pub platform_treasury: Pubkey,
     /// Current escrow status
     pub status: EscrowStatus,
-    /// When the escrow was created (unix timestamp)
-    pub created_at: i64,
     /// Auto-refund deadline (unix timestamp)
     pub deadline: i64,
     /// PDA bump for the escrow account
@@ -313,140 +431,36 @@ pub enum EscrowStatus {
 }
 
 // ============================================================
-// Instruction Account Contexts
+// Events (indexable off-chain)
 // ============================================================
 
-#[derive(Accounts)]
-#[instruction(mission_id: [u8; 32])]
-pub struct CreateEscrow<'info> {
-    /// The client funding the escrow (must sign)
-    #[account(mut)]
-    pub client: Signer<'info>,
-
-    /// The mentor who will receive payment (not a signer — just a reference)
-    /// CHECK: We only store the public key; no data is read from this account
-    pub mentor: UncheckedAccount<'info>,
-
-    /// The escrow state account (PDA)
-    #[account(
-        init,
-        payer = client,
-        space = 8 + EscrowAccount::INIT_SPACE,
-        seeds = [b"escrow", mission_id.as_ref(), client.key().as_ref()],
-        bump,
-    )]
-    pub escrow_account: Account<'info, EscrowAccount>,
-
-    /// The escrow vault (PDA) that holds the SOL
-    /// CHECK: This is a PDA used as a native SOL vault, not a data account
-    #[account(
-        mut,
-        seeds = [b"vault", mission_id.as_ref(), client.key().as_ref()],
-        bump,
-    )]
-    pub escrow_vault: SystemAccount<'info>,
-
-    /// Platform treasury wallet that receives the 2% commission
-    /// CHECK: We only send SOL to this address
-    #[account(mut)]
-    pub platform_treasury: UncheckedAccount<'info>,
-
-    pub system_program: Program<'info, System>,
+#[event]
+pub struct EscrowCreated {
+    pub mission_id: [u8; 32],
+    pub client: Pubkey,
+    pub mentor: Pubkey,
+    pub amount: u64,
 }
 
-#[derive(Accounts)]
-pub struct ReleaseEscrow<'info> {
-    /// The client who originally funded the escrow (must sign to approve)
-    #[account(mut)]
-    pub client: Signer<'info>,
-
-    /// The mentor receiving payment
-    /// CHECK: Validated against escrow_account.mentor
-    #[account(
-        mut,
-        constraint = mentor.key() == escrow_account.mentor @ EscrowError::WrongMentor
-    )]
-    pub mentor: UncheckedAccount<'info>,
-
-    /// The escrow state account
-    #[account(
-        mut,
-        seeds = [b"escrow", escrow_account.mission_id.as_ref(), client.key().as_ref()],
-        bump = escrow_account.bump,
-        constraint = escrow_account.client == client.key() @ EscrowError::Unauthorized,
-    )]
-    pub escrow_account: Account<'info, EscrowAccount>,
-
-    /// The escrow vault holding the SOL
-    /// CHECK: PDA vault validated by seeds
-    #[account(
-        mut,
-        seeds = [b"vault", escrow_account.mission_id.as_ref(), client.key().as_ref()],
-        bump = escrow_account.vault_bump,
-    )]
-    pub escrow_vault: SystemAccount<'info>,
-
-    pub system_program: Program<'info, System>,
+#[event]
+pub struct EscrowReleased {
+    pub mission_id: [u8; 32],
+    pub mentor: Pubkey,
+    pub amount: u64,
 }
 
-#[derive(Accounts)]
-pub struct RefundEscrow<'info> {
-    /// The client requesting the refund (must be the original funder)
-    #[account(mut)]
-    pub client: Signer<'info>,
-
-    /// The escrow state account
-    #[account(
-        mut,
-        seeds = [b"escrow", escrow_account.mission_id.as_ref(), client.key().as_ref()],
-        bump = escrow_account.bump,
-        constraint = escrow_account.client == client.key() @ EscrowError::Unauthorized,
-    )]
-    pub escrow_account: Account<'info, EscrowAccount>,
-
-    /// The escrow vault holding the SOL
-    /// CHECK: PDA vault validated by seeds
-    #[account(
-        mut,
-        seeds = [b"vault", escrow_account.mission_id.as_ref(), client.key().as_ref()],
-        bump = escrow_account.vault_bump,
-    )]
-    pub escrow_vault: SystemAccount<'info>,
-
-    pub system_program: Program<'info, System>,
+#[event]
+pub struct EscrowRefunded {
+    pub mission_id: [u8; 32],
+    pub client: Pubkey,
+    pub amount: u64,
 }
 
-#[derive(Accounts)]
-pub struct ExpireEscrow<'info> {
-    /// Anyone can call expire (permissionless crank)
-    pub caller: Signer<'info>,
-
-    /// The client who originally funded (receives the refund)
-    /// CHECK: Validated against escrow_account.client
-    #[account(
-        mut,
-        constraint = client.key() == escrow_account.client @ EscrowError::Unauthorized,
-    )]
-    pub client: UncheckedAccount<'info>,
-
-    /// The escrow state account
-    #[account(
-        mut,
-        seeds = [b"escrow", escrow_account.mission_id.as_ref(), escrow_account.client.as_ref()],
-        bump = escrow_account.bump,
-    )]
-    pub escrow_account: Account<'info, EscrowAccount>,
-
-    /// The escrow vault holding the SOL
-    /// CHECK: PDA vault validated by seeds
-    #[account(
-        mut,
-        seeds = [b"vault", escrow_account.mission_id.as_ref(), escrow_account.client.as_ref()],
-        bump = escrow_account.vault_bump,
-    )]
-    pub escrow_vault: SystemAccount<'info>,
-
-    pub system_program: Program<'info, System>,
+#[event]
+pub struct EscrowExpired {
+    pub mission_id: [u8; 32],
+    pub client: Pubkey,
+    pub amount: u64,
 }
 
 // ============================================================
@@ -455,20 +469,18 @@ pub struct ExpireEscrow<'info> {
 
 #[error_code]
 pub enum EscrowError {
-    #[msg("Escrow amount is below the minimum (0.01 SOL)")]
+    #[msg("Amount too small")]
     AmountTooSmall,
-    #[msg("Escrow amount exceeds the maximum (100 SOL)")]
+    #[msg("Amount too large")]
     AmountTooLarge,
-    #[msg("Deadline must be in the future")]
+    #[msg("Deadline in past")]
     DeadlineInPast,
-    #[msg("Deadline has not been reached yet")]
+    #[msg("Deadline not reached")]
     DeadlineNotReached,
-    #[msg("Invalid escrow status for this operation")]
+    #[msg("Invalid status")]
     InvalidStatus,
-    #[msg("Not authorized to perform this action")]
+    #[msg("Unauthorized access")]
     Unauthorized,
-    #[msg("Mentor address does not match escrow")]
-    WrongMentor,
-    #[msg("Arithmetic overflow")]
+    #[msg("Math overflow")]
     MathOverflow,
 }
