@@ -142,7 +142,7 @@ class GorillaBot(commands.Bot):
         super().__init__(command_prefix="!", intents=intents)
 
     async def setup_hook(self):
-        for cmd in [gorilla_setup, gorilla_status, gorilla_assign]:
+        for cmd in [gorilla_setup, gorilla_status, gorilla_assign, gorilla_channel, gorilla_category]:
             self.tree.add_command(cmd)
         try:
             synced = await self.tree.sync()
@@ -405,6 +405,132 @@ async def gorilla_assign(interaction: discord.Interaction,
             color=discord.Color.greyple()
         )
     await interaction.followup.send(embed=embed, ephemeral=True)
+
+
+# ============================================================
+# Slash Command: /gorilla-channel (Dynamic Channel Creation)
+# ============================================================
+@app_commands.command(
+    name="gorilla-channel",
+    description="🦍 Create a channel in any category. Owner only."
+)
+@app_commands.describe(
+    name="Channel name (e.g. HumanTalks)",
+    category="Which category to put it in (leave blank for uncategorized)",
+    topic="Optional: channel topic/description",
+    private="Make it visible only to you? (default: no)"
+)
+@is_owner()
+async def gorilla_channel(interaction: discord.Interaction,
+                          name: str,
+                          category: str = "",
+                          topic: str = "",
+                          private: bool = False):
+    """Create a channel dynamically in any category."""
+    await interaction.response.defer(ephemeral=True)
+    guild = interaction.guild
+    if not guild:
+        await interaction.followup.send("Must be used in a server.", ephemeral=True)
+        return
+
+    # Find the category if specified
+    cat_obj = None
+    if category:
+        cat_obj = discord.utils.find(
+            lambda c: category.lower() in c.name.lower(),
+            guild.categories
+        )
+        if not cat_obj:
+            await interaction.followup.send(
+                f"❌ Category matching **'{category}'** not found. "
+                f"Available: {', '.join(c.name for c in guild.categories)}",
+                ephemeral=True
+            )
+            return
+
+    # Build permission overwrites for private channels
+    overwrites = None
+    if private:
+        overwrites = {
+            guild.default_role: discord.PermissionOverwrite(view_channel=False),
+            guild.me: discord.PermissionOverwrite(view_channel=True, send_messages=True),
+            interaction.user: discord.PermissionOverwrite(view_channel=True, send_messages=True),
+        }
+
+    channel = await guild.create_text_channel(
+        name,
+        category=cat_obj,
+        topic=topic,
+        overwrites=overwrites
+    )
+
+    embed = discord.Embed(
+        title="✅ Channel Created",
+        description=f"**#{channel.name}**",
+        color=discord.Color.green()
+    )
+    if cat_obj:
+        embed.add_field(name="📁 Category", value=cat_obj.name, inline=True)
+    if topic:
+        embed.add_field(name="📝 Topic", value=topic, inline=True)
+    if private:
+        embed.add_field(name="🔒 Private", value="Only you can see it", inline=True)
+
+    await interaction.followup.send(embed=embed, ephemeral=True)
+    log.info(f"🦍 Channel #{channel.name} created by {interaction.user}")
+
+
+# ============================================================
+# Slash Command: /gorilla-category (Dynamic Category Creation)
+# ============================================================
+@app_commands.command(
+    name="gorilla-category",
+    description="🦍 Create a new category. Owner only."
+)
+@app_commands.describe(
+    name="Category name (e.g. 🗣️ │ HUMAN TALKS)",
+    private="Hide from everyone except you? (default: no)"
+)
+@is_owner()
+async def gorilla_category(interaction: discord.Interaction,
+                           name: str,
+                           private: bool = False):
+    """Create a category dynamically."""
+    await interaction.response.defer(ephemeral=True)
+    guild = interaction.guild
+    if not guild:
+        await interaction.followup.send("Must be used in a server.", ephemeral=True)
+        return
+
+    # Check if already exists
+    existing = discord.utils.get(guild.categories, name=name)
+    if existing:
+        await interaction.followup.send(
+            f"⏭️ Category **{name}** already exists.", ephemeral=True
+        )
+        return
+
+    overwrites = {}
+    if private:
+        overwrites = {
+            guild.default_role: discord.PermissionOverwrite(view_channel=False),
+            guild.me: discord.PermissionOverwrite(view_channel=True, send_messages=True, manage_channels=True),
+            interaction.user: discord.PermissionOverwrite(view_channel=True, send_messages=True),
+        }
+
+    cat = await guild.create_category(name, overwrites=overwrites if overwrites else None)
+
+    embed = discord.Embed(
+        title="✅ Category Created",
+        description=f"**{cat.name}**",
+        color=discord.Color.green()
+    )
+    if private:
+        embed.add_field(name="🔒 Private", value="Only you can see it", inline=True)
+    embed.set_footer(text="Use /gorilla-channel to add channels to it")
+
+    await interaction.followup.send(embed=embed, ephemeral=True)
+    log.info(f"🦍 Category '{cat.name}' created by {interaction.user}")
 
 
 # ============================================================
