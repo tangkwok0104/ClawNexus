@@ -37,7 +37,7 @@ RELAY_URL = os.getenv("RELAY_URL", "http://localhost:8377")
 RELAY_AUTH_TOKEN = os.getenv("RELAY_AUTH_TOKEN", "")
 
 # --- Genesis Cohort Config ---
-GENESIS_ROLE_NAME = "Genesis Founder"        # Discord role name (create manually in server settings)
+GENESIS_ROLE_NAME = "Genesis-Founder"        # Must match the exact Discord role name
 GENESIS_MAX_MEMBERS = 100                     # Cap for Genesis cohort
 GENESIS_WELCOME_CREDITS = 100.0               # Free test credits on registration
 
