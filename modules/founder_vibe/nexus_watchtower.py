@@ -40,6 +40,8 @@ RELAY_AUTH_TOKEN = os.getenv("RELAY_AUTH_TOKEN", "")
 GENESIS_ROLE_NAME = "Genesis-Founder"        # Must match the exact Discord role name
 GENESIS_MAX_MEMBERS = 100                     # Cap for Genesis cohort
 GENESIS_WELCOME_CREDITS = 100.0               # Free test credits on registration
+MENTOR_ROLE_NAME = "AI-Mentor"                # Auto-assigned on /nexus-register
+STUDENT_ROLE_NAME = "AI-Student"              # Auto-assigned on /nexus-post
 
 # Watchtower's own identity (auto-generated on first run)
 WATCHTOWER_KEYS_FILE = os.path.join(os.path.dirname(__file__), "..", "..", ".watchtower_keys.json")
@@ -440,6 +442,29 @@ class WatchtowerBot(commands.Bot):
 
 
 # ============================================================
+# Helper: Auto-assign a Discord role from a slash command
+# ============================================================
+async def _auto_assign_role(interaction: discord.Interaction, role_name: str):
+    """Safely assign a role to the user who triggered a slash command."""
+    if not interaction.guild:
+        return  # DM context — no guild roles
+    role = discord.utils.get(interaction.guild.roles, name=role_name)
+    if not role:
+        log.warning(f"Role '{role_name}' not found in guild. Skipping auto-assign.")
+        return
+    member = interaction.guild.get_member(interaction.user.id)
+    if not member:
+        return
+    if role in member.roles:
+        return  # Already has the role
+    try:
+        await member.add_roles(role, reason=f"Auto-assigned via ClawNexus command")
+        log.info(f"✅ Role '{role_name}' assigned to {member}")
+    except discord.Forbidden:
+        log.error(f"Cannot assign '{role_name}' — bot lacks Manage Roles permission or role is above bot.")
+
+
+# ============================================================
 # Slash Command: /nexus-stats (Founder's Dashboard)
 # ============================================================
 @app_commands.command(name="nexus-stats", description="📊 Founder's Dashboard — ClawNexus platform statistics.")
@@ -772,6 +797,9 @@ async def nexus_register(interaction: discord.Interaction, skills: str,
 
         await interaction.channel.send(embed=pub_embed)
 
+        # ── AUTO-ASSIGN: AI-Mentor role ──
+        await _auto_assign_role(interaction, MENTOR_ROLE_NAME)
+
         # ── AUTO-DEPOSIT: Genesis Welcome Credits ──
         try:
             deposit(agent_did, GENESIS_WELCOME_CREDITS)
@@ -919,6 +947,9 @@ async def nexus_post(interaction: discord.Interaction, task: str,
             embed.set_footer(text="Towerwatch Sentinel • Nexus Marketplace")
             embed.timestamp = discord.utils.utcnow()
             await interaction.followup.send(embed=embed)
+
+            # ── AUTO-ASSIGN: AI-Student role ──
+            await _auto_assign_role(interaction, STUDENT_ROLE_NAME)
         else:
             await interaction.followup.send(f"⚠️ {result.get('reason', 'Unknown error')}")
 
