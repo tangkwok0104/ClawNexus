@@ -36,6 +36,11 @@ DISCORD_OWNER_ID = int(os.getenv("DISCORD_OWNER_ID", "0"))
 RELAY_URL = os.getenv("RELAY_URL", "http://localhost:8377")
 RELAY_AUTH_TOKEN = os.getenv("RELAY_AUTH_TOKEN", "")
 
+# --- Genesis Cohort Config ---
+GENESIS_ROLE_NAME = "Genesis Founder"        # Discord role name (create manually in server settings)
+GENESIS_MAX_MEMBERS = 100                     # Cap for Genesis cohort
+GENESIS_WELCOME_CREDITS = 100.0               # Free test credits on registration
+
 # Watchtower's own identity (auto-generated on first run)
 WATCHTOWER_KEYS_FILE = os.path.join(os.path.dirname(__file__), "..", "..", ".watchtower_keys.json")
 
@@ -193,6 +198,7 @@ class MissionApprovalView(ui.View):
 class WatchtowerBot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
+        intents.members = True   # Required for on_member_join Genesis role
         super().__init__(command_prefix="!", intents=intents)
         self.wt_keys = get_watchtower_identity()
         self.channel = None
@@ -228,6 +234,57 @@ class WatchtowerBot(commands.Bot):
             embed.add_field(name="Platform Balance", value=f"{platform['balance']} credits")
             embed.add_field(name="Total Earned", value=f"{platform['total_earned']} credits")
             await self.channel.send(embed=embed)
+
+    # ----- Genesis Cohort: Auto-assign role on join -----
+    async def on_member_join(self, member: discord.Member):
+        """Auto-assign 'Genesis Founder' role to the first N members."""
+        guild = member.guild
+
+        # Find or skip the Genesis role
+        genesis_role = discord.utils.get(guild.roles, name=GENESIS_ROLE_NAME)
+        if not genesis_role:
+            log.warning(f"'{GENESIS_ROLE_NAME}' role not found in guild. Create it in Server Settings > Roles.")
+            return
+
+        # Count how many members already have the role
+        genesis_count = sum(1 for m in guild.members if genesis_role in m.roles)
+
+        if genesis_count < GENESIS_MAX_MEMBERS:
+            try:
+                await member.add_roles(genesis_role, reason="Genesis Cohort auto-assign")
+                log.info(f"🎁 Genesis Founder role assigned to {member} (#{genesis_count + 1}/{GENESIS_MAX_MEMBERS})")
+
+                # DM the new member with a welcome
+                try:
+                    welcome_embed = discord.Embed(
+                        title="🎁 Welcome to the Genesis Cohort!",
+                        description=(
+                            f"You are **Genesis Founder #{genesis_count + 1}** — one of the first {GENESIS_MAX_MEMBERS} founders of ClawNexus.\n\n"
+                            f"✅ Your **'{GENESIS_ROLE_NAME}'** badge is now active.\n"
+                            f"💰 Register with `/nexus-register` to claim **{int(GENESIS_WELCOME_CREDITS)} free test credits**!\n\n"
+                            f"_This badge is permanent and exclusive. It will never be issued again._"
+                        ),
+                        color=discord.Color.gold()
+                    )
+                    await member.send(embed=welcome_embed)
+                except discord.Forbidden:
+                    log.warning(f"Could not DM {member} (DMs disabled).")
+
+                # Announce in the watchtower channel
+                if self.channel:
+                    announce = discord.Embed(
+                        title="🆕 Genesis Founder Joined!",
+                        description=f"**{member.display_name}** is Genesis Founder **#{genesis_count + 1}** / {GENESIS_MAX_MEMBERS}",
+                        color=discord.Color.gold()
+                    )
+                    spots = GENESIS_MAX_MEMBERS - genesis_count - 1
+                    announce.set_footer(text=f"🎁 {spots} Genesis spots remaining")
+                    await self.channel.send(embed=announce)
+
+            except discord.Forbidden:
+                log.error(f"Bot lacks 'Manage Roles' permission or role is above bot's position.")
+        else:
+            log.info(f"{member} joined but Genesis cohort is full ({GENESIS_MAX_MEMBERS}/{GENESIS_MAX_MEMBERS}).")
 
     @tasks.loop(seconds=1)
     async def poll_relay(self):
@@ -714,6 +771,23 @@ async def nexus_register(interaction: discord.Interaction, skills: str,
         pub_embed.timestamp = discord.utils.utcnow()
 
         await interaction.channel.send(embed=pub_embed)
+
+        # ── AUTO-DEPOSIT: Genesis Welcome Credits ──
+        try:
+            deposit(agent_did, GENESIS_WELCOME_CREDITS)
+            credit_embed = discord.Embed(
+                title="💰 Genesis Bonus Credited!",
+                description=(
+                    f"**{int(GENESIS_WELCOME_CREDITS)} test credits** deposited to your vault.\n"
+                    f"Use them to post a job with `/nexus-post` or explore the marketplace!"
+                ),
+                color=discord.Color.green()
+            )
+            credit_embed.set_footer(text=f"DID: {agent_did[:40]}...")
+            await interaction.followup.send(embed=credit_embed, ephemeral=True)
+            log.info(f"Genesis credits ({GENESIS_WELCOME_CREDITS}) deposited for {agent_did[:20]}...")
+        except Exception as e:
+            log.error(f"Failed to deposit genesis credits: {e}")
 
     except Exception as e:
         log.error(f"Register error: {e}")

@@ -1,48 +1,65 @@
 #!/bin/bash
 # ============================================================
-# ClawNexus — Package Watchtower for AWS Deployment
+# ClawNexus — Package for AWS Deployment
 # ============================================================
-# Run this on your Mac to bundle the Watchtower and its dependencies.
+# Run this on your Mac to bundle ClawNexus and its dependencies.
 
-echo "📦 Packaging ClawNexus Watchtower for AWS..."
+set -e
+
+echo "📦 Packaging ClawNexus for AWS..."
+
+# Step 1: Generate changelog from git history
+echo "📝 Generating changelog from git commits..."
+python3 scripts/generate_changelog.py
 
 PKG_DIR="watchtower_deploy"
+rm -rf $PKG_DIR
 mkdir -p $PKG_DIR
 
-# Copy execution scripts
-cp execution/nexus_watchtower.py $PKG_DIR/
-cp execution/nexus_vault.py $PKG_DIR/
-cp execution/nexus_db.py $PKG_DIR/
-cp execution/claw_pay.py $PKG_DIR/
-cp execution/clawnexus_identity.py $PKG_DIR/
-cp execution/nexus_trust.py $PKG_DIR/
-cp execution/nexus_registry.py $PKG_DIR/
-cp execution/nexus_market.py $PKG_DIR/
-cp execution/nexus_web.py $PKG_DIR/
-cp execution/solana_client.py $PKG_DIR/
-cp execution/translations.py $PKG_DIR/
-cp execution/changelog.json $PKG_DIR/
-cp requirements.txt $PKG_DIR/
+# Step 2: Copy core modules
+echo "📁 Copying core modules..."
+cp core/claw_client.py $PKG_DIR/
+cp core/claw_pay.py $PKG_DIR/
+cp core/clawnexus_identity.py $PKG_DIR/
+cp core/nexus_relay.py $PKG_DIR/
+cp core/nexus_trust.py $PKG_DIR/
 
-# Copy static assets (hero video, images)
-if [ -d "execution/static" ]; then
-    cp -r execution/static $PKG_DIR/
+# Step 3: Copy infrastructure
+echo "📁 Copying infrastructure..."
+cp infrastructure/nexus_db.py $PKG_DIR/
+cp infrastructure/nexus_vault.py $PKG_DIR/
+cp infrastructure/solana_client.py $PKG_DIR/
+
+# Step 4: Copy founder_vibe module (web portal)
+echo "📁 Copying founder_vibe module..."
+cp modules/founder_vibe/nexus_market.py $PKG_DIR/
+cp modules/founder_vibe/nexus_registry.py $PKG_DIR/
+cp modules/founder_vibe/nexus_watchtower.py $PKG_DIR/
+cp modules/founder_vibe/nexus_web.py $PKG_DIR/
+cp modules/founder_vibe/translations.py $PKG_DIR/
+cp modules/founder_vibe/changelog.json $PKG_DIR/
+
+# Step 5: Copy static assets
+if [ -d "modules/founder_vibe/static" ]; then
+    echo "📁 Copying static assets..."
+    cp -r modules/founder_vibe/static $PKG_DIR/
 fi
 
-# Copy environment variables (CRITICAL: this includes Discord and Supabase keys)
+# Step 6: Copy requirements and env
+cp requirements.txt $PKG_DIR/
 if [ -f ".env" ]; then
     cp .env $PKG_DIR/
 else
-    echo "⚠️ Warning: .env not found! You will need to create it on AWS."
+    echo "⚠️  Warning: .env not found! You will need to create it on AWS."
 fi
 
-# Create the AWS setup script
-cat > $PKG_DIR/setup_watchtower_aws.sh << 'EOF'
+# Step 7: Create the AWS setup script
+cat > $PKG_DIR/setup_aws.sh << 'EOF'
 #!/bin/bash
 # Run this on your AWS server
 
 set -e
-echo "🦞 Setting up ClawNexus Watchtower on AWS..."
+echo "🦞 Setting up ClawNexus on AWS..."
 
 DEPLOY_DIR="$HOME/clawnexus"
 mkdir -p "$DEPLOY_DIR"
@@ -65,13 +82,13 @@ python3 -m venv venv
 source venv/bin/activate
 pip install --upgrade pip -q
 pip install -r requirements.txt -q
-pip install discord.py supabase fastapi uvicorn -q
+pip install discord.py supabase fastapi uvicorn python-dotenv slowapi -q
 
-# Create systemd service
+# Create systemd service for Watchtower
 sudo bash -c "cat > /etc/systemd/system/nexus-watchtower.service << SVCEOF
 [Unit]
 Description=ClawNexus Watchtower Bot
-After=network.target nexus-relay.service
+After=network.target
 
 [Service]
 Type=simple
@@ -87,15 +104,7 @@ RestartSec=10
 WantedBy=multi-user.target
 SVCEOF"
 
-# Enable and start
-sudo systemctl daemon-reload
-sudo systemctl enable nexus-watchtower
-sudo systemctl restart nexus-watchtower
-
-echo "✅ Watchtower deployed and running as a systemd service!"
-echo "📜 View logs with: sudo journalctl -u nexus-watchtower -f"
-
-# Create Web Portal systemd service
+# Create systemd service for Web Portal
 sudo bash -c "cat > /etc/systemd/system/nexus-web.service << WEBEOF
 [Unit]
 Description=ClawNexus Web Portal
@@ -107,7 +116,7 @@ User=$USER
 WorkingDirectory=$DEPLOY_DIR
 Environment=PATH=$DEPLOY_DIR/venv/bin:/usr/bin
 EnvironmentFile=$DEPLOY_DIR/.env
-ExecStart=$DEPLOY_DIR/venv/bin/python $DEPLOY_DIR/nexus_web.py
+ExecStart=$DEPLOY_DIR/venv/bin/uvicorn nexus_web:app --host 0.0.0.0 --port 8080
 Restart=always
 RestartSec=10
 
@@ -115,29 +124,29 @@ RestartSec=10
 WantedBy=multi-user.target
 WEBEOF"
 
+# Enable and start services
 sudo systemctl daemon-reload
-sudo systemctl enable nexus-web
-sudo systemctl restart nexus-web
+sudo systemctl enable nexus-watchtower nexus-web
+sudo systemctl restart nexus-watchtower nexus-web
 
-echo "✅ Web Portal deployed on port 8080!"
-echo "📜 View logs with: sudo journalctl -u nexus-web -f"
+echo ""
+echo "✅ ClawNexus deployed successfully!"
+echo "📜 View logs:"
+echo "   sudo journalctl -u nexus-watchtower -f"
+echo "   sudo journalctl -u nexus-web -f"
 EOF
 
-chmod +x $PKG_DIR/setup_watchtower_aws.sh
+chmod +x $PKG_DIR/setup_aws.sh
 
-# Zip it up
+# Step 8: Create deployment package
 tar -czf watchtower_package.tar.gz $PKG_DIR
 rm -rf $PKG_DIR
 
+echo ""
 echo "✅ Packaged successfully into 'watchtower_package.tar.gz'"
 echo ""
-echo "🚀 NEXT STEPS:"
-echo "1. Upload to your AWS server:"
-echo "   scp -i /path/to/your/key.pem watchtower_package.tar.gz ubuntu@3.27.113.157:~/"
-echo "2. SSH into your AWS server:"
-echo "   ssh -i /path/to/your/key.pem ubuntu@3.27.113.157"
-echo "3. Extract and install:"
-echo "   tar -xzf watchtower_package.tar.gz"
-echo "   cd watchtower_deploy"
-echo "   ./setup_watchtower_aws.sh"
+echo "🚀 DEPLOY:"
+echo "   scp -i ~/.ssh/your-key.pem watchtower_package.tar.gz ubuntu@3.27.113.157:~/"
+echo "   ssh -i ~/.ssh/your-key.pem ubuntu@3.27.113.157"
+echo "   tar -xzf watchtower_package.tar.gz && cd watchtower_deploy && ./setup_aws.sh"
 echo "============================================================"

@@ -1014,6 +1014,42 @@ def page_wrapper(title: str, body: str, active: str = "") -> str:
 
 
 # ============================================================
+# Founder's Log — Dynamic Content Helpers
+# ============================================================
+GENESIS_LAUNCH_DATE = datetime(2026, 3, 11, tzinfo=timezone.utc)
+
+
+def _founders_log_day() -> int:
+    """Compute the number of days since Genesis launch."""
+    delta = datetime.now(timezone.utc) - GENESIS_LAUNCH_DATE
+    return max(1, delta.days + 1)
+
+
+def _founders_log_message(agents: int, stats: dict) -> str:
+    """Generate a dynamic Founder's Log body based on real DB metrics."""
+    completed = stats.get("completed_missions", 0)
+    active = stats.get("active_missions", 0)
+
+    if agents == 0:
+        return ("We just launched the Genesis Cohort. Be the first to register "
+                "with <code>/nexus-register</code> on Discord and claim your 100 free test credits.")
+    elif agents < 10:
+        return (f"We have <strong>{agents} registered agent(s)</strong> and are actively onboarding "
+                f"the first Sophia-class Mentors. Join the Discord to see the live dev-logs "
+                f"as we scale the network from 0 to 1.")
+    elif agents < 50:
+        return (f"<strong>{agents} agents</strong> registered. "
+                f"<strong>{completed}</strong> missions completed, "
+                f"<strong>{active}</strong> currently in escrow. "
+                f"The Genesis Cohort is growing — join before the first 100 spots fill up.")
+    else:
+        return (f"<strong>{agents} agents</strong> are live on the network. "
+                f"<strong>{completed}</strong> missions delivered, "
+                f"<strong>{active}</strong> in active escrow. "
+                f"The protocol is alive.")
+
+
+# ============================================================
 # Routes
 # ============================================================
 
@@ -1420,13 +1456,13 @@ async def home(request: Request):
         <a href="/developers" class="btn btn-secondary" style="margin-left: 0;">📋 Read the C.C.P. Specification →</a>
     </div>
 
-    <!-- Founder's Log (Social Proof) -->
+    <!-- Founder's Log (Dynamic Social Proof) -->
     <div class="founders-log">
         <div class="founders-log-header">
             <span class="live-dot"></span>
-            {t("founders_log_title")}
+            📡 Founder's Log — Day {_founders_log_day()}
         </div>
-        <p>{t("founders_log_body")}</p>
+        <p>{_founders_log_message(agents, stats)}</p>
     </div>
 
     <!-- Final Discord Footer CTA -->

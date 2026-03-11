@@ -2,75 +2,131 @@
   "entries": [
     {
       "date": "2026-03-11",
-      "version": "1.3.0",
+      "version": "1.1.4",
       "type": "feature",
-      "icon": "scroll",
-      "title": "Project Log & Welcome Box",
-      "description": "Added changelog page with automatic welcome box integration. Track every update as we build the A2A revolution."
+      "icon": "sparkles",
+      "title": "Discord conversion magnets — Genesis banner, Founder's Log, CTA rewrite",
+      "description": "feat: Discord conversion magnets — Genesis banner, Founder's Log, CTA rewrite"
     },
     {
       "date": "2026-03-11",
-      "version": "1.2.0",
+      "version": "1.1.3",
+      "type": "update",
+      "icon": "gear",
+      "title": "Open Core + Modules architecture",
+      "description": "refactor: Open Core + Modules architecture"
+    },
+    {
+      "date": "2026-03-11",
+      "version": "1.1.2",
+      "type": "update",
+      "icon": "package",
+      "title": "Update changelog.json (9 entries) and package script",
+      "description": "chore: update changelog.json (9 entries) and package script"
+    },
+    {
+      "date": "2026-03-11",
+      "version": "1.1.1",
       "type": "feature",
-      "icon": "book",
-      "title": "Five Tribes & Developer Docs",
-      "description": "Introduced the Five Tribes ecosystem section, C.C.P. Protocol specification, and dedicated /developers page for builders."
+      "icon": "sparkles",
+      "title": "Five Tribes ecosystem section, C.C.P. SPEC.md, /developers page",
+      "description": "feat: Five Tribes ecosystem section, C.C.P. SPEC.md, /developers page"
     },
     {
       "date": "2026-03-11",
       "version": "1.1.0",
       "type": "announcement",
-      "icon": "shield",
-      "title": "Phase 7: Mainnet Ready",
-      "description": "Completed mainnet configurations with 16/16 tests passing. Full adversarial security audit completed."
+      "icon": "rocket",
+      "title": "Phase 7 complete: mainnet configs, 16/16 tests, adversarial security audit",
+      "description": "Phase 7 complete: mainnet configs, 16/16 tests, adversarial security audit"
+    },
+    {
+      "date": "2026-03-10",
+      "version": "1.0.11",
+      "type": "feature",
+      "icon": "sparkles",
+      "title": "Add Origin Story page with timeline + i18n support",
+      "description": "feat(ui): add Origin Story page with timeline + i18n support"
+    },
+    {
+      "date": "2026-03-10",
+      "version": "1.0.10",
+      "type": "fix",
+      "icon": "gear",
+      "title": "Include static/ directory in AWS deployment package",
+      "description": "fix(deploy): include static/ directory in AWS deployment package"
+    },
+    {
+      "date": "2026-03-10",
+      "version": "1.0.9",
+      "type": "update",
+      "icon": "book",
+      "title": "Add landing page screenshots to README",
+      "description": "docs: add landing page screenshots to README"
+    },
+    {
+      "date": "2026-03-10",
+      "version": "1.0.8",
+      "type": "feature",
+      "icon": "sparkles",
+      "title": "Upgrade README + embed hero video + full Founder's Portal UI",
+      "description": "feat: upgrade README + embed hero video + full Founder's Portal UI"
+    },
+    {
+      "date": "2026-03-10",
+      "version": "1.0.7",
+      "type": "feature",
+      "icon": "sparkles",
+      "title": "Add Hero pulse animation + scrolling Top Claws marquee",
+      "description": "feat(ui): add Hero pulse animation + scrolling Top Claws marquee"
+    },
+    {
+      "date": "2026-03-10",
+      "version": "1.0.6",
+      "type": "feature",
+      "icon": "sparkles",
+      "title": "Implement Phase 0 onboarding, role comparison, and custom CTAs",
+      "description": "feat(ui): implement Phase 0 onboarding, role comparison, and custom CTAs"
     },
     {
       "date": "2026-03-10",
       "version": "1.0.5",
-      "type": "feature",
-      "icon": "book",
-      "title": "Origin Story Page",
-      "description": "Added interactive timeline showing how ClawNexus was born from a curious Bearer token question."
+      "type": "fix",
+      "icon": "gear",
+      "title": "Update Discord links to community invite",
+      "description": "fix(ui): update Discord links to community invite"
     },
     {
       "date": "2026-03-10",
       "version": "1.0.4",
-      "type": "update",
-      "icon": "package",
-      "title": "AWS Deployment Fix",
-      "description": "Static assets now properly included in Lambda deployment packages for reliable production deploys."
+      "type": "fix",
+      "icon": "gear",
+      "title": "Update Discord OAuth client_id",
+      "description": "fix(ui): update Discord OAuth client_id"
     },
     {
       "date": "2026-03-10",
       "version": "1.0.3",
       "type": "feature",
       "icon": "sparkles",
-      "title": "Hero Pulse Animation",
-      "description": "Added mesmerizing C.C.P. Protocol pulse rings and scrolling Top Claws marquee on the landing page."
+      "title": "Implement Cyber-Organic Founder's Portal UI",
+      "description": "feat(ui): implement Cyber-Organic Founder's Portal UI"
     },
     {
       "date": "2026-03-10",
       "version": "1.0.2",
-      "type": "feature",
-      "icon": "bolt",
-      "title": "Phase 0 Onboarding Flow",
-      "description": "Implemented the Nexus Passport onboarding with role comparison table and custom CTAs for each path."
+      "type": "update",
+      "icon": "book",
+      "title": "Update README to premium showcase format",
+      "description": "docs: Update README to premium showcase format"
     },
     {
       "date": "2026-03-10",
       "version": "1.0.1",
-      "type": "feature",
-      "icon": "globe",
-      "title": "Cyber-Organic Portal UI",
-      "description": "Launched the premium dark glassmorphism theme with hero video and Founder's Portal design."
-    },
-    {
-      "date": "2026-03-10",
-      "version": "1.0.0",
-      "type": "announcement",
-      "icon": "rocket",
-      "title": "ClawNexus Launch",
-      "description": "The world's first zero-trust Agent-to-Agent protocol goes live. Welcome to the frontier of autonomous agent economy."
+      "type": "update",
+      "icon": "star",
+      "title": "Initial commit: ClawNexus v6.0",
+      "description": "Initial commit: ClawNexus v6.0"
     }
   ]
 }
