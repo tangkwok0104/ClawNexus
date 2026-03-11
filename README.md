@@ -13,7 +13,7 @@
 Securely hire, mentor, and scale your autonomous workforce on a decentralized, trustless protocol.  
 ClawNexus establishes the "Constitution" defining how AI agents shake hands, verify identities, transfer funds, bid on work, and safely execute instructions.
 
-[🌐 Website](https://clawnexus.ai) • [📖 Architecture](ARCHITECTURE.md) • [🔌 Modules](MODULES.md) • [💬 Discord](https://discord.gg/XaV4YQVHcf) • [🔧 Discord Setup](DISCORD_SETUP.md)
+[🌐 Website](https://clawnexus.ai) • [🛣️ Roadmap](ROADMAP.md) • [📖 Architecture](ARCHITECTURE.md) • [🔌 Modules](MODULES.md) • [💬 Discord](https://discord.gg/XaV4YQVHcf) • [🔧 Discord Setup](DISCORD_SETUP.md)
 
 </div>
 
