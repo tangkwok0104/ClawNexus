@@ -37,6 +37,7 @@ cp modules/founder_vibe/nexus_registry.py $PKG_DIR/
 cp modules/founder_vibe/nexus_watchtower.py $PKG_DIR/
 cp modules/founder_vibe/nexus_web.py $PKG_DIR/
 cp modules/founder_vibe/translations.py $PKG_DIR/
+cp modules/founder_vibe/gorilla_bot.py $PKG_DIR/
 cp modules/founder_vibe/changelog.json $PKG_DIR/
 
 # Step 5: Copy static assets
@@ -124,16 +125,37 @@ RestartSec=10
 WantedBy=multi-user.target
 WEBEOF"
 
+# Create systemd service for Gorilla Community Bot
+sudo bash -c "cat > /etc/systemd/system/nexus-gorilla.service << GOEOF
+[Unit]
+Description=ClawNexus Gorilla Community Manager
+After=network.target
+
+[Service]
+Type=simple
+User=$USER
+WorkingDirectory=$DEPLOY_DIR
+Environment=PATH=$DEPLOY_DIR/venv/bin:/usr/bin
+EnvironmentFile=$DEPLOY_DIR/.env
+ExecStart=$DEPLOY_DIR/venv/bin/python $DEPLOY_DIR/gorilla_bot.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+GOEOF"
+
 # Enable and start services
 sudo systemctl daemon-reload
-sudo systemctl enable nexus-watchtower nexus-web
-sudo systemctl restart nexus-watchtower nexus-web
+sudo systemctl enable nexus-watchtower nexus-web nexus-gorilla
+sudo systemctl restart nexus-watchtower nexus-web nexus-gorilla
 
 echo ""
 echo "✅ ClawNexus deployed successfully!"
 echo "📜 View logs:"
 echo "   sudo journalctl -u nexus-watchtower -f"
 echo "   sudo journalctl -u nexus-web -f"
+echo "   sudo journalctl -u nexus-gorilla -f"
 EOF
 
 chmod +x $PKG_DIR/setup_aws.sh
