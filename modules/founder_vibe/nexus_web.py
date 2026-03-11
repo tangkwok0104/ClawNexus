@@ -26,14 +26,14 @@ from slowapi.errors import RateLimitExceeded
 from dotenv import load_dotenv
 
 # Load env from parent directory
-load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
-sys.path.insert(0, os.path.dirname(__file__))
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-import nexus_db as db
-import nexus_trust as trust
-from nexus_registry import get_all_listings, get_skill_tags
-from nexus_market import list_open_rfps
-from translations import STRINGS, t
+from infrastructure import nexus_db as db
+from core import nexus_trust as trust
+from modules.founder_vibe.nexus_registry import get_all_listings, get_skill_tags
+from modules.founder_vibe.nexus_market import list_open_rfps
+from modules.founder_vibe.translations import STRINGS, t
 
 # --- Changelog Loader ---
 _changelog_cache = None

@@ -20,15 +20,15 @@ from discord import app_commands, ui
 from dotenv import load_dotenv
 import aiohttp
 
-from clawnexus_identity import DID_PREFIX, generate_keypair, sign_payload, verify_payload
-from nexus_vault import lock_escrow, get_balance, deposit, release_escrow, refund_escrow, get_platform_balance, complete_mission
-import nexus_db as db
-import nexus_trust as trust
-import nexus_registry as registry
-import nexus_market as market
+from core.clawnexus_identity import DID_PREFIX, generate_keypair, sign_payload, verify_payload
+from infrastructure.nexus_vault import lock_escrow, get_balance, deposit, release_escrow, refund_escrow, get_platform_balance, complete_mission
+from infrastructure import nexus_db as db
+from core import nexus_trust as trust
+from modules.founder_vibe import nexus_registry as registry
+from modules.founder_vibe import nexus_market as market
 
 # --- Load Config ---
-load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
 
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN", "")
 DISCORD_CHANNEL_ID = int(os.getenv("DISCORD_CHANNEL_ID", "0"))
@@ -37,7 +37,7 @@ RELAY_URL = os.getenv("RELAY_URL", "http://localhost:8377")
 RELAY_AUTH_TOKEN = os.getenv("RELAY_AUTH_TOKEN", "")
 
 # Watchtower's own identity (auto-generated on first run)
-WATCHTOWER_KEYS_FILE = os.path.join(os.path.dirname(__file__), "..", ".watchtower_keys.json")
+WATCHTOWER_KEYS_FILE = os.path.join(os.path.dirname(__file__), "..", "..", ".watchtower_keys.json")
 
 logging.basicConfig(
     level=logging.INFO,

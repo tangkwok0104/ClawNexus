@@ -1,15 +1,25 @@
+"""
+Phase 1 QA Test — Cryptographic Handshake (Ed25519 DID Verification).
+
+Tests identity generation, payload signing, signature verification,
+and tamper detection — all core protocol functions.
+"""
+
 import logging
 import json
 import uuid
 import os
+import sys
 
-from clawnexus_identity import generate_keypair, sign_payload, verify_payload
+# Ensure we can import from the repo root
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from core.clawnexus_identity import generate_keypair, sign_payload, verify_payload
 
 # Configure the QA test logging output
-# Ensure the tmp directory exists
-os.makedirs('../.tmp', exist_ok=True)
+os.makedirs(os.path.join(os.path.dirname(__file__), '..', '.tmp'), exist_ok=True)
 logging.basicConfig(
-    filename='../.tmp/test_report.log',
+    filename=os.path.join(os.path.dirname(__file__), '..', '.tmp', 'test_report.log'),
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
@@ -56,7 +66,6 @@ def run_tests():
     # Simulate sending the payload + signature over the wire...
     # [4] Kevin Verifies the Signature
     logging.info("Kevin receives the payload and verifies the signature using Sophia's public key...")
-    # In reality Kevin pulls her pubkey from the DID or registry
     sender_pubkey = sophia_pub 
     is_valid = verify_payload(mission_proposal, signature, sender_pubkey)
     

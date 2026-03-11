@@ -14,23 +14,23 @@ import asyncio
 import logging
 import os
 import json
+import sys
+import unittest
+
+# Ensure we can import from the repo root
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from aiohttp import web
 from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop
-import unittest
 
-# Ensure we can import sibling modules
-import sys
-sys.path.insert(0, os.path.dirname(__file__))
-
-from clawnexus_identity import generate_keypair, sign_payload, verify_payload
-from nexus_relay import create_app
-from claw_client import ClawClient
+from core.clawnexus_identity import generate_keypair, sign_payload, verify_payload
+from core.nexus_relay import create_app
+from core.claw_client import ClawClient
 
 # --- Logging ---
-os.makedirs('../.tmp', exist_ok=True)
+os.makedirs(os.path.join(os.path.dirname(__file__), '..', '.tmp'), exist_ok=True)
 logging.basicConfig(
-    filename='../.tmp/test_report_phase2.log',
+    filename=os.path.join(os.path.dirname(__file__), '..', '.tmp', 'test_report_phase2.log'),
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )

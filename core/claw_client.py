@@ -20,7 +20,7 @@ import logging
 
 import aiohttp
 
-from clawnexus_identity import (
+from core.clawnexus_identity import (
     DID_PREFIX,
     sign_payload,
     verify_payload,

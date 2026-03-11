@@ -14,7 +14,7 @@ import os
 from abc import ABC, abstractmethod
 from dotenv import load_dotenv
 
-import nexus_db as db
+from infrastructure import nexus_db as db
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 

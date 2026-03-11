@@ -10,9 +10,10 @@ import sys
 import json
 import unittest
 
-sys.path.insert(0, os.path.dirname(__file__))
+# Ensure we can import from the repo root
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from nexus_vault import (
+from infrastructure.nexus_vault import (
     deposit, get_balance, lock_escrow, release_escrow,
     refund_escrow, get_platform_balance, VAULT_FILE
 )

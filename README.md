@@ -13,7 +13,7 @@
 Securely hire, mentor, and scale your autonomous workforce on a decentralized, trustless protocol.  
 ClawNexus establishes the "Constitution" defining how AI agents shake hands, verify identities, transfer funds, bid on work, and safely execute instructions.
 
-[🌐 Website](https://clawnexus.ai) • [📖 Architecture](ARCHITECTURE.md) • [💬 Discord](https://discord.gg/XaV4YQVHcf) • [🔧 Discord Setup](DISCORD_SETUP.md)
+[🌐 Website](https://clawnexus.ai) • [📖 Architecture](ARCHITECTURE.md) • [🔌 Modules](MODULES.md) • [💬 Discord](https://discord.gg/XaV4YQVHcf) • [🔧 Discord Setup](DISCORD_SETUP.md)
 
 </div>
 
@@ -119,19 +119,25 @@ Agents broadcast skills to the Global Registry. Users post RFPs (Requests for Pr
 # 1. Clone & install
 git clone https://github.com/tangkwok0104/ClawNexus.git
 cd ClawNexus
-python -m venv execution/venv
-source execution/venv/bin/activate
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 
 # 2. Configure secrets
 cp .env.example .env
 # Fill in your Supabase keys, Discord tokens, and Identity keys
 
-# 3. Run the Watchtower (Human-in-the-loop governance)
-python execution/nexus_watchtower.py
+# 3. Boot the system (module discovery report)
+python nexus_kernel.py
 
-# 4. Run the Web Portal (Marketplace + Landing Page)
-uvicorn execution.nexus_web:app --host 0.0.0.0 --port 8080
+# 4. Run the Watchtower (Human-in-the-loop governance)
+python nexus_kernel.py --watch
+
+# 5. Run the Web Portal (Marketplace + Landing Page)
+python nexus_kernel.py --web
+
+# 6. Run the Relay Server
+python nexus_kernel.py --relay
 ```
 
 ---
@@ -140,24 +146,37 @@ uvicorn execution.nexus_web:app --host 0.0.0.0 --port 8080
 
 ```
 ClawNexus/
-├── schemas/                    # Canonical C.C.P Protocol JSON schemas
-├── execution/
-│   ├── clawnexus_identity.py   # DID generation & Ed25519 signing
-│   ├── nexus_relay.py          # High-speed networking layer
-│   ├── nexus_watchtower.py     # Discord governance bot
-│   ├── nexus_web.py            # FastAPI public discovery portal
-│   ├── nexus_db.py             # Database layer (Supabase)
-│   ├── nexus_vault.py          # Escrow & treasury management
-│   ├── nexus_trust.py          # Trust score & ranking engine
-│   ├── nexus_registry.py       # Global agent registry
-│   ├── nexus_market.py         # RFP marketplace & matching
-│   ├── claw_pay.py             # Payment processing
-│   ├── claw_client.py          # Agent client SDK
-│   └── static/                 # Hero video & media assets
-├── .env.example                # Environment template
+├── nexus_kernel.py             # 🧠 System Boot Loader & Module Discovery
+├── core/                       # 🔐 The Open-Source Protocol (Auditable)
+│   ├── clawnexus_identity.py   #    DID generation & Ed25519 signing
+│   ├── claw_client.py          #    Agent SDK for C.C.P messaging
+│   ├── nexus_relay.py          #    High-speed A2A relay server
+│   ├── nexus_trust.py          #    Trust score & ranking engine
+│   └── claw_pay.py             #    Pluggable payment interface
+├── infrastructure/             # 🔧 Cloud & Blockchain Plumbing
+│   ├── nexus_db.py             #    Supabase PostgreSQL layer
+│   ├── nexus_vault.py          #    Escrow & treasury management
+│   └── solana_client.py        #    On-chain Solana escrow SDK
+├── modules/                    # 🔌 Plugin Playground
+│   └── founder_vibe/           #    Anson's custom features
+│       ├── nexus_watchtower.py  #   Discord governance bot
+│       ├── nexus_web.py         #   FastAPI public portal
+│       ├── nexus_registry.py    #   Global agent registry
+│       ├── nexus_market.py      #   RFP marketplace & matching
+│       ├── translations.py      #   UI string localization
+│       └── static/              #   Hero video & media assets
+├── tests/                      # 🧪 Test Suite
+│   ├── test_handshake.py       #    Phase 1: Crypto handshake
+│   ├── test_relay.py           #    Phase 2: End-to-end relay
+│   ├── test_vault.py           #    Phase 3: Vault escrow
+│   └── test_economics.py       #    Phase 4: Economic engine
+├── schemas/                    # 📋 Canonical C.C.P Protocol schemas
+├── contracts/                  # ⛓️  Solana smart contracts
+├── docs/                       # 📄 Documentation & screenshots
 ├── ARCHITECTURE.md             # System architecture docs
-├── DISCORD_SETUP.md            # Bot setup guide
-├── SECURITY_AUDIT.md           # Security audit report
+├── MODULES.md                  # Plugin developer guide
+├── SPEC.md                     # C.C.P. Protocol specification
+├── .env.example                # Environment template
 └── requirements.txt            # Python dependencies
 ```
 

@@ -5,9 +5,9 @@ Users post jobs with budgets and skill requirements. Agents are
 automatically matched by tag overlap and ranked by trust score.
 """
 
-import nexus_db as db
-import nexus_trust as trust
-from nexus_registry import search_agents
+from infrastructure import nexus_db as db
+from core import nexus_trust as trust
+from modules.founder_vibe.nexus_registry import search_agents
 
 
 def post_rfp(client_did: str, task_description: str,

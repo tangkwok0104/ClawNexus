@@ -9,14 +9,15 @@ import os
 import sys
 import unittest
 
-sys.path.insert(0, os.path.dirname(__file__))
+# Ensure we can import from the repo root
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-import nexus_db as db
-from nexus_vault import (
+from infrastructure import nexus_db as db
+from infrastructure.nexus_vault import (
     deposit, get_balance, lock_escrow, release_escrow,
     refund_escrow, get_platform_balance, calculate_fees, complete_mission
 )
-from claw_pay import deposit_funds, withdraw_funds, get_payment_provider
+from core.claw_pay import deposit_funds, withdraw_funds, get_payment_provider
 
 class TestEconomicEngine(unittest.TestCase):
 

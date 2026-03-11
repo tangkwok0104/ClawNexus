@@ -10,7 +10,7 @@ Backward-compatible API: same function signatures as v1 (JSON-based).
 import uuid
 from datetime import datetime, timezone
 
-import nexus_db as db
+from infrastructure import nexus_db as db
 
 # --- Configuration ---
 PLATFORM_COMMISSION_RATE = 0.02  # 2% infrastructure fee

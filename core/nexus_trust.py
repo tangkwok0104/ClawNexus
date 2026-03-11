@@ -20,7 +20,7 @@ Rank Tiers (LoL-style):
 """
 
 import math
-import nexus_db as db
+from infrastructure import nexus_db as db
 
 # ============================================================
 # Rank Tiers

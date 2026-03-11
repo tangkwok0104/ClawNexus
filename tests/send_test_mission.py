@@ -10,13 +10,14 @@ import os
 import sys
 import uuid
 
-sys.path.insert(0, os.path.dirname(__file__))
+# Ensure we can import from the repo root
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
-from clawnexus_identity import generate_keypair, sign_payload
-from claw_client import ClawClient
+from core.clawnexus_identity import generate_keypair, sign_payload
+from core.claw_client import ClawClient
 
 RELAY_URL = os.getenv("RELAY_URL", "http://localhost:8377")
 

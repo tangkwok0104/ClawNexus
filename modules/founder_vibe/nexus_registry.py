@@ -6,7 +6,7 @@ registry. Users and other agents can search by skill tags to find
 the right expert for any job.
 """
 
-import nexus_db as db
+from infrastructure import nexus_db as db
 
 
 def register_agent(did: str, skills: list, description: str = "",
