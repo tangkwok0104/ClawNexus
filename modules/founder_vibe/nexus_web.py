@@ -817,6 +817,103 @@ footer {
     .log-entry-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
     .log-entry-meta { margin-left: 0; margin-top: 0.5rem; }
 }
+
+/* Genesis Banner */
+.genesis-banner {
+    background: linear-gradient(135deg, rgba(255,107,53,0.12) 0%, rgba(72,169,166,0.12) 50%, rgba(244,162,97,0.12) 100%);
+    border: 1px solid;
+    border-image: linear-gradient(90deg, var(--accent), var(--teal), var(--gold)) 1;
+    border-radius: 12px;
+    padding: 1.25rem 2rem;
+    text-align: center;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-primary);
+    margin: -1rem auto 2.5rem;
+    max-width: 800px;
+    position: relative;
+    overflow: hidden;
+    animation: genesisPulse 3s ease-in-out infinite;
+}
+.genesis-banner::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: conic-gradient(from 0deg, transparent, rgba(255,107,53,0.06), transparent, rgba(72,169,166,0.06), transparent);
+    animation: genesisRotate 6s linear infinite;
+}
+@keyframes genesisPulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(255,107,53,0.1); }
+    50% { box-shadow: 0 0 40px rgba(255,107,53,0.2), 0 0 60px rgba(72,169,166,0.1); }
+}
+@keyframes genesisRotate {
+    to { transform: rotate(360deg); }
+}
+.genesis-banner .genesis-text {
+    position: relative;
+    z-index: 1;
+}
+.genesis-banner .genesis-tag {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    padding: 0.2rem 0.75rem;
+    border-radius: 4px;
+    margin-bottom: 0.75rem;
+    animation: tagBlink 2s ease-in-out infinite;
+}
+@keyframes tagBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Founder's Log */
+.founders-log {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--teal);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    max-width: 800px;
+    margin: 0 auto 2rem;
+}
+.founders-log-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    color: var(--teal);
+}
+.founders-log-header .live-dot {
+    width: 8px;
+    height: 8px;
+    background: #22c55e;
+    border-radius: 50%;
+    animation: pulseDot 1.5s ease-in-out infinite;
+}
+.founders-log p {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* No-Setup Note */
+.no-setup-note {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    font-style: italic;
+}
 """
 
 
@@ -947,6 +1044,15 @@ async def home(request: Request):
         <div>
             <a href="https://discord.gg/XaV4YQVHcf" target="_blank" class="btn btn-primary">{t("btn_connect")}</a>
             <a href="/marketplace" class="btn btn-secondary">{t("btn_explore")}</a>
+        </div>
+        <p class="no-setup-note">{t("no_setup_note")}</p>
+    </div>
+
+    <!-- Genesis Banner -->
+    <div class="genesis-banner">
+        <div class="genesis-text">
+            <div class="genesis-tag">Limited — Genesis Cohort</div>
+            <div>{t("genesis_banner")}</div>
         </div>
     </div>
 
@@ -1087,7 +1193,7 @@ async def home(request: Request):
         </div>
         <div class="card" style="border-color: #5865F2;">
             <h4 style="color: #5865F2; margin-bottom: 0.5rem;">{t("p0_2h")}</h4>
-            <p>Link your digital identity to Discord. Towerwatch Sentinel handles all mission authorizations and rank updates securely.</p>
+            <p>Join the community Discord. Our Watchtower bot handles mission authorizations and rank updates — no setup required.</p>
         </div>
         <div class="card" style="border-color: var(--gold);">
             <h4 style="color: var(--gold); margin-bottom: 0.5rem;">{t("p0_3h")}</h4>
@@ -1314,7 +1420,16 @@ async def home(request: Request):
         <a href="/developers" class="btn btn-secondary" style="margin-left: 0;">📋 Read the C.C.P. Specification →</a>
     </div>
 
-    <!-- Final Sentinel Discord Footer CTA -->
+    <!-- Founder's Log (Social Proof) -->
+    <div class="founders-log">
+        <div class="founders-log-header">
+            <span class="live-dot"></span>
+            {t("founders_log_title")}
+        </div>
+        <p>{t("founders_log_body")}</p>
+    </div>
+
+    <!-- Final Discord Footer CTA -->
     <div class="section-divider"></div>
     <div class="card discord-card" style="text-align: center; max-width: 800px; margin: 0 auto 3rem; padding: 3rem 2rem;">
         <h2 class="section-title" style="justify-content: center; margin-bottom: 1rem;">{t("cta_join")}</h2>
@@ -1324,6 +1439,7 @@ async def home(request: Request):
         <a href="https://discord.gg/XaV4YQVHcf" target="_blank" class="btn btn-discord" style="font-size: 1.1rem; padding: 1rem 2.5rem;">
             {t("btn_authorize")}
         </a>
+        <p class="no-setup-note">{t("no_setup_note")}</p>
     </div>
     """
     return page_wrapper("Home", body, "home")
