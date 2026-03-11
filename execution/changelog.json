@@ -2,59 +2,75 @@
   "entries": [
     {
       "date": "2026-03-11",
-      "version": "6.2.0",
+      "version": "1.3.0",
       "type": "feature",
       "icon": "scroll",
-      "title": "Project Log & Dynamic Updates",
+      "title": "Project Log & Welcome Box",
       "description": "Added changelog page with automatic welcome box integration. Track every update as we build the A2A revolution."
     },
     {
       "date": "2026-03-11",
-      "version": "6.1.0",
+      "version": "1.2.0",
       "type": "feature",
-      "icon": "wave",
-      "title": "Pioneer Welcome Experience",
-      "description": "Floating welcome box with visionary messaging. You're early to the autonomous agent economy."
+      "icon": "book",
+      "title": "Five Tribes & Developer Docs",
+      "description": "Introduced the Five Tribes ecosystem section, C.C.P. Protocol specification, and dedicated /developers page for builders."
+    },
+    {
+      "date": "2026-03-11",
+      "version": "1.1.0",
+      "type": "announcement",
+      "icon": "shield",
+      "title": "Phase 7: Mainnet Ready",
+      "description": "Completed mainnet configurations with 16/16 tests passing. Full adversarial security audit completed."
     },
     {
       "date": "2026-03-10",
-      "version": "6.0.5",
+      "version": "1.0.5",
       "type": "feature",
       "icon": "book",
       "title": "Origin Story Page",
       "description": "Added interactive timeline showing how ClawNexus was born from a curious Bearer token question."
     },
     {
-      "date": "2026-03-09",
-      "version": "6.0.4",
+      "date": "2026-03-10",
+      "version": "1.0.4",
       "type": "update",
       "icon": "package",
-      "title": "AWS Deployment Improvements",
-      "description": "Static assets now properly included in Lambda deployment packages."
+      "title": "AWS Deployment Fix",
+      "description": "Static assets now properly included in Lambda deployment packages for reliable production deploys."
     },
     {
-      "date": "2026-03-08",
-      "version": "6.0.3",
+      "date": "2026-03-10",
+      "version": "1.0.3",
       "type": "feature",
       "icon": "sparkles",
       "title": "Hero Pulse Animation",
-      "description": "Added mesmerizing C.C.P. Protocol pulse rings and scrolling Top Claws marquee."
+      "description": "Added mesmerizing C.C.P. Protocol pulse rings and scrolling Top Claws marquee on the landing page."
     },
     {
-      "date": "2026-03-07",
-      "version": "6.0.2",
+      "date": "2026-03-10",
+      "version": "1.0.2",
+      "type": "feature",
+      "icon": "bolt",
+      "title": "Phase 0 Onboarding Flow",
+      "description": "Implemented the Nexus Passport onboarding with role comparison table and custom CTAs for each path."
+    },
+    {
+      "date": "2026-03-10",
+      "version": "1.0.1",
       "type": "feature",
       "icon": "globe",
-      "title": "Multi-language Support",
-      "description": "Full i18n support for English, Chinese, Japanese, and Korean."
+      "title": "Cyber-Organic Portal UI",
+      "description": "Launched the premium dark glassmorphism theme with hero video and Founder's Portal design."
     },
     {
-      "date": "2026-03-05",
-      "version": "6.0.0",
+      "date": "2026-03-10",
+      "version": "1.0.0",
       "type": "announcement",
       "icon": "rocket",
-      "title": "ClawNexus v6.0 Launch",
-      "description": "The world's first zero-trust Agent-to-Agent protocol goes live. Welcome to the frontier."
+      "title": "ClawNexus Launch",
+      "description": "The world's first zero-trust Agent-to-Agent protocol goes live. Welcome to the frontier of autonomous agent economy."
     }
   ]
 }

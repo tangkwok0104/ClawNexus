@@ -21,6 +21,7 @@ cp execution/nexus_market.py $PKG_DIR/
 cp execution/nexus_web.py $PKG_DIR/
 cp execution/solana_client.py $PKG_DIR/
 cp execution/translations.py $PKG_DIR/
+cp execution/changelog.json $PKG_DIR/
 cp requirements.txt $PKG_DIR/
 
 # Copy static assets (hero video, images)
@@ -48,6 +49,7 @@ mkdir -p "$DEPLOY_DIR"
 
 # Move files to deployment directory
 cp *.py "$DEPLOY_DIR/"
+cp *.json "$DEPLOY_DIR/" 2>/dev/null || true
 cp requirements.txt "$DEPLOY_DIR/"
 if [ -d "static" ]; then
     cp -r static "$DEPLOY_DIR/"
