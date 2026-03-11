@@ -208,7 +208,8 @@ class WatchtowerBot(commands.Bot):
     async def setup_hook(self):
         self.poll_relay.start()
         for cmd in [nexus_stats, nexus_top, nexus_profile, nexus_verify, nexus_help,
-                     nexus_register, nexus_wallet, nexus_post, nexus_market_cmd]:
+                     nexus_register, nexus_wallet, nexus_post, nexus_market_cmd,
+                     nexus_agent_group]:
             self.tree.add_command(cmd)
         try:
             synced = await self.tree.sync()
@@ -908,6 +909,240 @@ async def nexus_register(interaction: discord.Interaction, skills: str,
 
     except Exception as e:
         log.error(f"Register error: {e}")
+        await interaction.followup.send(f"⚠️ Error: `{e}`", ephemeral=True)
+
+
+# ============================================================
+# Slash Command Group: /nexus-agent (Agent Management)
+# ============================================================
+GENESIS_MAX_AGENTS = 5
+AGENT_LISTINGS_CHANNEL = "agent-listings"  # Channel name (without emoji prefix)
+
+nexus_agent_group = app_commands.Group(name="nexus-agent", description="🤖 Manage your AI agents")
+
+
+@nexus_agent_group.command(name="add", description="🤖 Register a new AI agent under your ownership.")
+@app_commands.describe(
+    name="Your agent's display name (e.g. CodeAuditor-v3)",
+    skills="Optional: comma-separated skills (e.g. Python,Rust,Solana)",
+    rate="Optional: base rate in SOL per hour",
+    model="Optional: the AI model powering it (e.g. GPT-4o, Claude 3.5)",
+    description="Optional: what makes your agent unique"
+)
+async def nexus_agent_add(interaction: discord.Interaction, name: str,
+                          skills: str = "", rate: float = 0.0,
+                          model: str = "Not specified",
+                          description: str = ""):
+    """Register a new AI agent under the owner's DID."""
+    await interaction.response.defer(ephemeral=True)
+
+    try:
+        discord_id = str(interaction.user.id)
+
+        # Check if owner is registered
+        owner = db.get_agent_by_discord_id(discord_id)
+        if not owner:
+            await interaction.followup.send(
+                "⚠️ You need to register first! Run `/nexus-register` to get your owner identity.",
+                ephemeral=True
+            )
+            return
+
+        owner_did = owner["did"]
+
+        # Check agent limit
+        agent_count = db.count_agents_by_owner(owner_did)
+        if agent_count >= GENESIS_MAX_AGENTS:
+            await interaction.followup.send(
+                f"⚠️ Genesis limit reached! You can register up to **{GENESIS_MAX_AGENTS}** agents. "
+                f"Use `/nexus-agent remove` to deactivate one first.",
+                ephemeral=True
+            )
+            return
+
+        # Generate a new keypair for this agent
+        private_hex, public_hex, agent_did = generate_keypair()
+
+        # Parse skills
+        skill_list = [s.strip() for s in skills.split(",") if s.strip()] if skills else ["General"]
+
+        # Register agent in marketplace
+        registry.register_agent(agent_did, skill_list, description, rate)
+
+        # Store agent with owner link
+        db.ensure_agent(
+            agent_did,
+            agent_type="agent",
+            owner_did=owner_did,
+            agent_name=name,
+            rank="Iron"
+        )
+
+        rank = "Iron"
+        rank_badge = RANK_BADGES[rank]
+
+        # ── EPHEMERAL: Agent passport to owner ──
+        agent_passport = discord.Embed(
+            title=f"🤖 AGENT REGISTERED: {name}",
+            description=(
+                f"Your agent **{name}** has been registered in the Nexus.\n"
+                f"Agent #{agent_count + 1} of {GENESIS_MAX_AGENTS} (Genesis limit)."
+            ),
+            color=discord.Color.from_rgb(0, 255, 200)
+        )
+        agent_passport.add_field(name="👤 Owner", value=f"@{interaction.user.display_name}", inline=True)
+        agent_passport.add_field(name="🛡️ Status", value="VERIFIED ✅", inline=True)
+        agent_passport.add_field(name="🏅 Rank", value=f"**{rank_badge} {rank.upper()}**", inline=True)
+        agent_passport.add_field(name="🆔 Agent DID", value=f"```{agent_did}```", inline=False)
+        agent_passport.add_field(name="🧠 Model", value=model, inline=True)
+        agent_passport.add_field(name="🎯 Skills", value=", ".join(skill_list), inline=True)
+        agent_passport.add_field(name="💲 Rate", value=f"{rate} SOL/hr" if rate > 0 else "Not set", inline=True)
+        agent_passport.set_footer(text="Welcome to the Nexus, Pioneer. 🦞")
+        agent_passport.timestamp = discord.utils.utcnow()
+        await interaction.followup.send(embed=agent_passport, ephemeral=True)
+
+        # ── EPHEMERAL: Agent private key ──
+        key_embed = discord.Embed(
+            title=f"🔐 Private Key for {name} — SAVE THIS!",
+            description=(
+                "⚠️ **This is your agent's private key.** Save it securely.\n"
+                "You'll need this to authenticate your agent when connecting via API."
+            ),
+            color=discord.Color.red()
+        )
+        key_embed.add_field(name="🔑 Private Key", value=f"```{private_hex}```", inline=False)
+        key_embed.add_field(name="🆔 Public Key", value=f"```{public_hex}```", inline=False)
+        key_embed.set_footer(text="🛡️ Never stored on our servers. Only YOU have it.")
+        await interaction.followup.send(embed=key_embed, ephemeral=True)
+
+        # ── PUBLIC: Post registry card in #agent-listings ──
+        listings_channel = discord.utils.get(interaction.guild.text_channels, name=AGENT_LISTINGS_CHANNEL)
+        if not listings_channel:
+            # Try with emoji prefix variations
+            for ch in interaction.guild.text_channels:
+                if "agent-listing" in ch.name.lower():
+                    listings_channel = ch
+                    break
+
+        if listings_channel:
+            card = discord.Embed(
+                title=f"🤖 AGENT REGISTRY: {name}",
+                description=f"*{description}*" if description else "*No description provided.*",
+                color=discord.Color.from_rgb(0, 255, 200)
+            )
+            card.add_field(name="👤 Owner", value=f"@{interaction.user.display_name}", inline=True)
+            card.add_field(name="🆔 Identity", value=f"`{agent_did[:30]}...`", inline=True)
+            card.add_field(name="🏅 Rank", value=f"{rank_badge} {rank.upper()}", inline=True)
+            card.add_field(name="🧠 Model", value=model, inline=True)
+            card.add_field(name="🎯 Specialization", value=", ".join(skill_list), inline=True)
+            card.add_field(name="💲 Base Rate", value=f"{rate} SOL/hr" if rate > 0 else "TBD", inline=True)
+            card.add_field(
+                name="⚡ Protocol",
+                value="Pincer-Spec v1.0 (C.C.P. Compliant)",
+                inline=False
+            )
+            card.set_footer(text=f"Registered by {interaction.user.display_name} • DID: {agent_did[:25]}...")
+            card.timestamp = discord.utils.utcnow()
+            await listings_channel.send(embed=card)
+        else:
+            # Fallback: post in the current channel
+            await interaction.channel.send(
+                f"🤖 **{name}** registered by @{interaction.user.display_name} | DID: `{agent_did[:30]}...`"
+            )
+
+    except Exception as e:
+        log.error(f"Agent add error: {e}")
+        await interaction.followup.send(f"⚠️ Error: `{e}`", ephemeral=True)
+
+
+@nexus_agent_group.command(name="list", description="📋 List all your registered agents.")
+async def nexus_agent_list(interaction: discord.Interaction):
+    """Show all agents owned by the user."""
+    await interaction.response.defer(ephemeral=True)
+
+    try:
+        discord_id = str(interaction.user.id)
+        owner = db.get_agent_by_discord_id(discord_id)
+        if not owner:
+            await interaction.followup.send(
+                "⚠️ You're not registered yet. Run `/nexus-register` first.",
+                ephemeral=True
+            )
+            return
+
+        agents = db.get_agents_by_owner(owner["did"])
+        if not agents:
+            await interaction.followup.send(
+                "You haven't registered any agents yet. Use `/nexus-agent add` to register your first one!",
+                ephemeral=True
+            )
+            return
+
+        embed = discord.Embed(
+            title=f"🤖 Your Agents ({len(agents)}/{GENESIS_MAX_AGENTS})",
+            description=f"Owner: **@{interaction.user.display_name}**\nOwner DID: `{owner['did'][:30]}...`",
+            color=discord.Color.teal()
+        )
+
+        for i, agent in enumerate(agents, 1):
+            agent_name = agent.get("agent_name", "Unnamed")
+            rank = agent.get("rank", "Iron")
+            rank_badge = RANK_BADGES.get(rank, "[ I ]")
+            did = agent.get("did", "???")
+
+            # Get listing info
+            listing = registry.get_listing(did)
+            skills_str = ", ".join(listing.get("skill_tags", [])) if listing else "—"
+            rate_val = listing.get("base_rate", 0) if listing else 0
+
+            embed.add_field(
+                name=f"{i}. {agent_name} — {rank_badge} {rank.upper()}",
+                value=(
+                    f"DID: `{did[:25]}...`\n"
+                    f"Skills: {skills_str}\n"
+                    f"Rate: {rate_val} SOL/hr"
+                ),
+                inline=False
+            )
+
+        embed.set_footer(text=f"Genesis limit: {GENESIS_MAX_AGENTS} agents per owner")
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+    except Exception as e:
+        log.error(f"Agent list error: {e}")
+        await interaction.followup.send(f"⚠️ Error: `{e}`", ephemeral=True)
+
+
+@nexus_agent_group.command(name="remove", description="🗑️ Deactivate one of your agents.")
+@app_commands.describe(agent_did="The DID of the agent to deactivate (from /nexus-agent list)")
+async def nexus_agent_remove(interaction: discord.Interaction, agent_did: str):
+    """Deactivate an agent owned by the user."""
+    await interaction.response.defer(ephemeral=True)
+
+    try:
+        discord_id = str(interaction.user.id)
+        owner = db.get_agent_by_discord_id(discord_id)
+        if not owner:
+            await interaction.followup.send("⚠️ You're not registered yet.", ephemeral=True)
+            return
+
+        success = db.deactivate_agent(agent_did, owner["did"])
+        if success:
+            embed = discord.Embed(
+                title="🗑️ Agent Deactivated",
+                description=f"Agent `{agent_did[:30]}...` has been deactivated.",
+                color=discord.Color.orange()
+            )
+            embed.set_footer(text="Use /nexus-agent add to register a new agent.")
+            await interaction.followup.send(embed=embed, ephemeral=True)
+        else:
+            await interaction.followup.send(
+                "⚠️ Agent not found or you don't own it. Use `/nexus-agent list` to see your agents.",
+                ephemeral=True
+            )
+
+    except Exception as e:
+        log.error(f"Agent remove error: {e}")
         await interaction.followup.send(f"⚠️ Error: `{e}`", ephemeral=True)
 
 

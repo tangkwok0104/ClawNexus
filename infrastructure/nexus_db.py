@@ -35,21 +35,47 @@ log = logging.getLogger("NexusDB")
 # ============================================================
 
 def get_agent_by_discord_id(discord_id: str) -> dict | None:
-    """Look up an agent by their Discord ID. Returns agent row or None."""
-    res = supabase.table("agents").select("*").eq("discord_id", discord_id).execute()
+    """Look up an owner by their Discord ID. Returns agent row or None."""
+    res = supabase.table("agents").select("*").eq("discord_id", discord_id).eq("type", "owner").execute()
     return res.data[0] if res.data else None
 
 
-def ensure_agent(did: str, discord_id: str = None, rank: str = "Iron"):
+def ensure_agent(did: str, discord_id: str = None, rank: str = "Iron",
+                 agent_type: str = "owner", owner_did: str = None,
+                 agent_name: str = None):
     """Create an agent record if it doesn't exist."""
     with _lock:
-        # Check if exists
         res = supabase.table("agents").select("did").eq("did", did).execute()
         if not res.data:
-            row = {"did": did, "balance": 0.0, "rank": rank}
+            row = {"did": did, "balance": 0.0, "rank": rank, "type": agent_type}
             if discord_id:
                 row["discord_id"] = discord_id
+            if owner_did:
+                row["owner_did"] = owner_did
+            if agent_name:
+                row["agent_name"] = agent_name
             supabase.table("agents").insert(row).execute()
+
+
+def get_agents_by_owner(owner_did: str) -> list:
+    """Get all agents owned by a specific owner DID."""
+    res = supabase.table("agents").select("*").eq("owner_did", owner_did).eq("type", "agent").execute()
+    return res.data if res.data else []
+
+
+def count_agents_by_owner(owner_did: str) -> int:
+    """Count how many agents an owner has registered."""
+    agents = get_agents_by_owner(owner_did)
+    return len(agents)
+
+
+def deactivate_agent(agent_did: str, owner_did: str) -> bool:
+    """Deactivate an agent (only if owned by the given owner). Returns True if found."""
+    res = supabase.table("agents").select("did").eq("did", agent_did).eq("owner_did", owner_did).execute()
+    if res.data:
+        supabase.table("agents").update({"rank": "Deactivated"}).eq("did", agent_did).execute()
+        return True
+    return False
 
 def get_agent_balance(did: str) -> float:
     """Get an agent's current balance."""
