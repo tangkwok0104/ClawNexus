@@ -266,31 +266,65 @@ async def gorilla_setup(interaction: discord.Interaction):
 
     results = []
 
+    # --- Step 0: Auto-create missing roles ---
+    needed_roles = [GENESIS_ROLE_NAME, MENTOR_ROLE_NAME, STUDENT_ROLE_NAME, PROVIDER_ROLE_NAME]
+    role_colors = {
+        GENESIS_ROLE_NAME: discord.Color.gold(),
+        MENTOR_ROLE_NAME: discord.Color.blue(),
+        STUDENT_ROLE_NAME: discord.Color.green(),
+        PROVIDER_ROLE_NAME: discord.Color.purple(),
+    }
+    for rname in needed_roles:
+        existing = discord.utils.get(guild.roles, name=rname)
+        if not existing:
+            try:
+                await guild.create_role(
+                    name=rname,
+                    color=role_colors.get(rname, discord.Color.default()),
+                    hoist=True,
+                    reason="Gorilla auto-setup"
+                )
+                results.append(f"🏷️ Created role: **{rname}**")
+            except discord.Forbidden:
+                results.append(f"⚠️ Cannot create role: **{rname}** (need Manage Roles)")
+        else:
+            results.append(f"⏭️ Role exists: **{rname}**")
+
+    results.append("───")
+
+    # --- Step 1: Create categories and channels ---
     for category_def in SERVER_BLUEPRINT:
         cat_name = category_def["name"]
 
         # Find or create category
         category = discord.utils.get(guild.categories, name=cat_name)
         if not category:
-            # Build @everyone permission overwrite
-            everyone_perms = category_def["everyone_perms"]
-            overwrites = {
-                guild.default_role: discord.PermissionOverwrite(**everyone_perms)
-            }
+            try:
+                # Build @everyone permission overwrite
+                everyone_perms = category_def["everyone_perms"]
+                overwrites = {
+                    guild.default_role: discord.PermissionOverwrite(**everyone_perms)
+                }
 
-            # Add role-specific overrides
-            for role_name, perms in category_def.get("role_overrides", {}).items():
-                role = discord.utils.get(guild.roles, name=role_name)
-                if role:
-                    overwrites[role] = discord.PermissionOverwrite(**perms)
+                # Add role-specific overrides (skip if role doesn't exist)
+                for role_name, perms in category_def.get("role_overrides", {}).items():
+                    role = discord.utils.get(guild.roles, name=role_name)
+                    if role:
+                        overwrites[role] = discord.PermissionOverwrite(**perms)
 
-            # Also ensure the bot itself can always see and send
-            overwrites[guild.me] = discord.PermissionOverwrite(
-                view_channel=True, send_messages=True, manage_channels=True
-            )
+                # Ensure the bot itself can always see and send
+                overwrites[guild.me] = discord.PermissionOverwrite(
+                    view_channel=True, send_messages=True, manage_channels=True
+                )
 
-            category = await guild.create_category(cat_name, overwrites=overwrites)
-            results.append(f"✅ Created category: **{cat_name}**")
+                category = await guild.create_category(cat_name, overwrites=overwrites)
+                results.append(f"✅ Created category: **{cat_name}**")
+            except discord.Forbidden:
+                results.append(f"❌ Cannot create category: **{cat_name}** (Missing Permissions)")
+                continue  # Skip channels for this category
+            except Exception as e:
+                results.append(f"❌ Error: **{cat_name}** — {e}")
+                continue
         else:
             results.append(f"⏭️ Category exists: **{cat_name}**")
 
@@ -299,12 +333,17 @@ async def gorilla_setup(interaction: discord.Interaction):
             ch_name = ch_def["name"]
             existing = discord.utils.get(guild.text_channels, name=ch_name, category=category)
             if not existing:
-                await guild.create_text_channel(
-                    ch_name,
-                    category=category,
-                    topic=ch_def.get("topic", "")
-                )
-                results.append(f"  📝 Created: #{ch_name}")
+                try:
+                    await guild.create_text_channel(
+                        ch_name,
+                        category=category,
+                        topic=ch_def.get("topic", "")
+                    )
+                    results.append(f"  📝 Created: #{ch_name}")
+                except discord.Forbidden:
+                    results.append(f"  ❌ Cannot create: #{ch_name} (Missing Permissions)")
+                except Exception as e:
+                    results.append(f"  ❌ Error: #{ch_name} — {e}")
             else:
                 results.append(f"  ⏭️ Exists: #{ch_name}")
 
