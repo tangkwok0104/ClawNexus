@@ -17,13 +17,22 @@ load_dotenv()
 
 # --- Configuration ---
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")  # anon key (read-only after RLS hardening)
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
     raise RuntimeError("SUPABASE_URL and SUPABASE_KEY must be set in .env")
+if not SUPABASE_SERVICE_ROLE_KEY:
+    raise RuntimeError(
+        "SUPABASE_SERVICE_ROLE_KEY must be set in .env. "
+        "Get it from: Supabase Dashboard → Settings → API → service_role key"
+    )
 
-# Supabase Client
+# Supabase Clients
+# Read client (anon key) — used for SELECT queries, subject to RLS
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+# Write client (service_role key) — used for INSERT/UPDATE/DELETE, bypasses RLS
+supabase_admin: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
 # Thread lock for safe concurrent access
 _lock = threading.Lock()
@@ -54,7 +63,7 @@ def ensure_agent(did: str, discord_id: str = None, rank: str = "Iron",
                 row["owner_did"] = owner_did
             if agent_name:
                 row["agent_name"] = agent_name
-            supabase.table("agents").insert(row).execute()
+            supabase_admin.table("agents").insert(row).execute()
 
 
 def get_agents_by_owner(owner_did: str) -> list:
@@ -73,7 +82,7 @@ def deactivate_agent(agent_did: str, owner_did: str) -> bool:
     """Deactivate an agent (only if owned by the given owner). Returns True if found."""
     res = supabase.table("agents").select("did").eq("did", agent_did).eq("owner_did", owner_did).execute()
     if res.data:
-        supabase.table("agents").update({"rank": "Deactivated"}).eq("did", agent_did).execute()
+        supabase_admin.table("agents").update({"rank": "Deactivated"}).eq("did", agent_did).execute()
         return True
     return False
 
@@ -96,7 +105,7 @@ def update_agent_balance(did: str, delta: float):
         if res.data:
             current_balance = float(res.data[0]["balance"])
             new_balance = round(current_balance + delta, 4)
-            supabase.table("agents").update({"balance": new_balance}).eq("did", did).execute()
+            supabase_admin.table("agents").update({"balance": new_balance}).eq("did", did).execute()
 
 # ============================================================
 # Platform Treasury
@@ -120,7 +129,7 @@ def credit_treasury(amount: float):
             cur = res.data[0]
             new_balance = round(float(cur["balance"]) + amount, 4)
             new_total = round(float(cur["total_earned"]) + amount, 4)
-            supabase.table("platform_treasury").update({
+            supabase_admin.table("platform_treasury").update({
                 "balance": new_balance,
                 "total_earned": new_total
             }).eq("id", 1).execute()
@@ -146,7 +155,7 @@ def create_mission(mission_id: str, sender_did: str, receiver_did: str = None,
             "net_amount": net_amount,
             "status": status
         }
-        supabase.table("missions").insert(data).execute()
+        supabase_admin.table("missions").insert(data).execute()
 
 def get_mission(mission_id: str) -> dict:
     """Look up a mission by ID."""
@@ -159,7 +168,7 @@ def update_mission_status(mission_id: str, status: str):
         data = {"status": status}
         if status == "COMPLETED":
             data["completed_at"] = datetime.now(timezone.utc).isoformat()
-        supabase.table("missions").update(data).eq("mission_id", mission_id).execute()
+        supabase_admin.table("missions").update(data).eq("mission_id", mission_id).execute()
 
 def list_missions(status: str = None, limit: int = 50) -> list:
     """List missions, optionally filtered by status."""
@@ -188,7 +197,7 @@ def log_transaction(tx_type: str, agent_did: str, amount: float,
             "mission_id": mission_id,
             "details": details
         }
-        supabase.table("transactions").insert(data).execute()
+        supabase_admin.table("transactions").insert(data).execute()
     return tx_id
 
 def get_transactions(agent_did: str = None, limit: int = 50) -> list:
@@ -211,7 +220,7 @@ def update_agent_total_earned(did: str, amount: float):
         if res.data:
             current = float(res.data[0].get("total_earned", 0.0))
             new_total = round(current + amount, 4)
-            supabase.table("agents").update({"total_earned": new_total}).eq("did", did).execute()
+            supabase_admin.table("agents").update({"total_earned": new_total}).eq("did", did).execute()
 
 # ============================================================
 # Aggregation Helpers (for /nexus-stats Dashboard)
@@ -249,7 +258,7 @@ def insert_review(mission_id: str, reviewer_did: str, agent_did: str,
                   rating: int, comment: str = ""):
     """Insert a review and recalculate the agent's rating."""
     with _lock:
-        supabase.table("reviews").insert({
+        supabase_admin.table("reviews").insert({
             "mission_id": mission_id,
             "reviewer_did": reviewer_did,
             "agent_did": agent_did,
@@ -269,7 +278,7 @@ def recalc_agent_rating(agent_did: str):
         avg = 0.0
         count = 0
     with _lock:
-        supabase.table("agents").update({
+        supabase_admin.table("agents").update({
             "rating_avg": avg,
             "review_count": count
         }).eq("did", agent_did).execute()
@@ -304,7 +313,7 @@ def set_agent_verified(did: str, verified: bool = True):
     """Toggle verification badge on an agent."""
     ensure_agent(did)
     with _lock:
-        supabase.table("agents").update({"is_verified": verified}).eq("did", did).execute()
+        supabase_admin.table("agents").update({"is_verified": verified}).eq("did", did).execute()
 
 def get_reviews_for_agent(agent_did: str, limit: int = 10) -> list:
     """Get recent reviews for an agent."""

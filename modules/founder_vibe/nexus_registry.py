@@ -27,9 +27,9 @@ def register_agent(did: str, skills: list, description: str = "",
     }
 
     if existing.data:
-        db.supabase.table("registry").update(data).eq("agent_did", did).execute()
+        db.supabase_admin.table("registry").update(data).eq("agent_did", did).execute()
     else:
-        db.supabase.table("registry").insert(data).execute()
+        db.supabase_admin.table("registry").insert(data).execute()
 
     return {
         "status": "ok",
@@ -42,13 +42,13 @@ def register_agent(did: str, skills: list, description: str = "",
 
 def deactivate_listing(did: str) -> dict:
     """Mark an agent as inactive in the marketplace."""
-    db.supabase.table("registry").update({"is_active": False}).eq("agent_did", did).execute()
+    db.supabase_admin.table("registry").update({"is_active": False}).eq("agent_did", did).execute()
     return {"status": "ok", "did": did, "is_active": False}
 
 
 def activate_listing(did: str) -> dict:
     """Mark an agent as active in the marketplace."""
-    db.supabase.table("registry").update({"is_active": True}).eq("agent_did", did).execute()
+    db.supabase_admin.table("registry").update({"is_active": True}).eq("agent_did", did).execute()
     return {"status": "ok", "did": did, "is_active": True}
 
 

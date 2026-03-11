@@ -124,7 +124,7 @@ def _track_page_view(path: str, ip: str, user_agent: str, referrer: str):
         from supabase import create_client
         sb = create_client(
             os.getenv("SUPABASE_URL"),
-            os.getenv("SUPABASE_KEY")
+            os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY")
         )
         sb.table("page_views").insert({
             "path": path,
