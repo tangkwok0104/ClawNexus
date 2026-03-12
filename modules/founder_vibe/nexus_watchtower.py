@@ -42,6 +42,7 @@ GENESIS_MAX_MEMBERS = 100                     # Cap for Genesis cohort
 GENESIS_WELCOME_CREDITS = 100.0               # Free test credits on registration
 MENTOR_ROLE_NAME = "AI-Mentor"                # Auto-assigned on /nexus-register
 STUDENT_ROLE_NAME = "AI-Student"              # Auto-assigned on /nexus-post
+MEMBER_ROLE_NAME = "Member"                   # Unlocks full community access on /nexus-register
 
 # Watchtower's own identity (auto-generated on first run)
 WATCHTOWER_KEYS_FILE = os.path.join(os.path.dirname(__file__), "..", "..", ".watchtower_keys.json")
@@ -526,7 +527,7 @@ async def nexus_stats(interaction: discord.Interaction):
 
     except Exception as e:
         log.error(f"Dashboard error: {e}")
-        await interaction.followup.send(f"⚠️ Error fetching stats: `{e}`")
+        await interaction.followup.send("⚠️ Something went wrong fetching stats. Please try again.")
 
 
 # ============================================================
@@ -612,7 +613,7 @@ async def nexus_top(interaction: discord.Interaction):
 
     except Exception as e:
         log.error(f"Leaderboard error: {e}")
-        await interaction.followup.send(f"⚠️ Error: `{e}`")
+        await interaction.followup.send("⚠️ Something went wrong. Please try again.")
 
 
 # ============================================================
@@ -648,7 +649,7 @@ async def nexus_profile(interaction: discord.Interaction, agent_did: str):
 
     except Exception as e:
         log.error(f"Profile error: {e}")
-        await interaction.followup.send(f"⚠️ Error: `{e}`")
+        await interaction.followup.send("⚠️ Something went wrong. Please try again.")
 
 
 # ============================================================
@@ -685,7 +686,7 @@ async def nexus_verify(interaction: discord.Interaction, agent_did: str):
 
     except Exception as e:
         log.error(f"Verify error: {e}")
-        await interaction.followup.send(f"⚠️ Error: `{e}`")
+        await interaction.followup.send("⚠️ Something went wrong. Please try again.")
 
 
 # ============================================================
@@ -791,11 +792,14 @@ async def nexus_register(interaction: discord.Interaction, skills: str,
         # Generate a REAL Ed25519 keypair for this agent
         private_hex, public_hex, agent_did = generate_keypair()
 
+        # Store agent with discord_id link + Iron rank FIRST
+        # (must happen before register_agent, which internally calls
+        #  ensure_agent(did) without discord_id — if that runs first,
+        #  the discord_id is never linked and duplicate check breaks)
+        db.ensure_agent(agent_did, discord_id=discord_id, rank="Iron")
+
         # Register in marketplace (stores ONLY public key + DID)
         result = registry.register_agent(agent_did, skill_list, description, rate)
-
-        # Store agent with discord_id link + Iron rank
-        db.ensure_agent(agent_did, discord_id=discord_id, rank="Iron")
 
         # ── MESSAGE 1: PASSPORT (ephemeral — only the user sees this) ──
         rank = "Iron"
@@ -890,6 +894,9 @@ async def nexus_register(interaction: discord.Interaction, skills: str,
         # ── AUTO-ASSIGN: AI-Mentor role ──
         await _auto_assign_role(interaction, MENTOR_ROLE_NAME)
 
+        # ── AUTO-ASSIGN: Citizen role (unlocks full community access) ──
+        await _auto_assign_role(interaction, MEMBER_ROLE_NAME)
+
         # ── AUTO-DEPOSIT: Genesis Welcome Credits ──
         try:
             deposit(agent_did, GENESIS_WELCOME_CREDITS)
@@ -909,7 +916,7 @@ async def nexus_register(interaction: discord.Interaction, skills: str,
 
     except Exception as e:
         log.error(f"Register error: {e}")
-        await interaction.followup.send(f"⚠️ Error: `{e}`", ephemeral=True)
+        await interaction.followup.send("⚠️ Something went wrong. Please try again.", ephemeral=True)
 
 
 # ============================================================
@@ -1001,19 +1008,46 @@ async def nexus_agent_add(interaction: discord.Interaction, name: str,
         agent_passport.timestamp = discord.utils.utcnow()
         await interaction.followup.send(embed=agent_passport, ephemeral=True)
 
-        # ── EPHEMERAL: Agent private key ──
-        key_embed = discord.Embed(
-            title=f"🔐 Private Key for {name} — SAVE THIS!",
+        # ── EPHEMERAL: Ready-to-paste .env config snippet ──
+        relay_url = os.getenv("RELAY_URL", "http://localhost:8377")
+        env_snippet = (
+            f"# ── ClawNexus Agent Config ({name}) ──\n"
+            f"CLAWNEXUS_RELAY_URL={relay_url}\n"
+            f"CLAWNEXUS_AGENT_DID={agent_did}\n"
+            f"CLAWNEXUS_PRIVATE_KEY={private_hex}\n"
+            f"CLAWNEXUS_PUBLIC_KEY={public_hex}\n"
+        )
+        python_snippet = (
+            "from core.claw_client import ClawClient\n"
+            "import os\n\n"
+            "client = ClawClient(\n"
+            "    os.getenv('CLAWNEXUS_RELAY_URL'),\n"
+            "    os.getenv('CLAWNEXUS_PRIVATE_KEY'),\n"
+            "    os.getenv('CLAWNEXUS_PUBLIC_KEY'),\n"
+            ")\nawait client.poll_loop()"
+        )
+
+        config_embed = discord.Embed(
+            title=f"🔐 Connect Config for {name} — SAVE THIS!",
             description=(
-                "⚠️ **This is your agent's private key.** Save it securely.\n"
-                "You'll need this to authenticate your agent when connecting via API."
+                "⚠️ **Copy the `.env` snippet below and paste it into your agent project.**\n"
+                "Your private key is **never stored** on our servers. Only YOU have it.\n\n"
+                "**Never share your private key with anyone — not even ClawNexus staff.**"
             ),
             color=discord.Color.red()
         )
-        key_embed.add_field(name="🔑 Private Key", value=f"```{private_hex}```", inline=False)
-        key_embed.add_field(name="🆔 Public Key", value=f"```{public_hex}```", inline=False)
-        key_embed.set_footer(text="🛡️ Never stored on our servers. Only YOU have it.")
-        await interaction.followup.send(embed=key_embed, ephemeral=True)
+        config_embed.add_field(
+            name="📋 .env Config (paste into your project)",
+            value=f"```env\n{env_snippet}```",
+            inline=False
+        )
+        config_embed.add_field(
+            name="🐍 Python Quickstart",
+            value=f"```python\n{python_snippet}\n```",
+            inline=False
+        )
+        config_embed.set_footer(text="🛡️ Private key never stored on our servers. Save it now — you won't see it again.")
+        await interaction.followup.send(embed=config_embed, ephemeral=True)
 
         # ── PUBLIC: Post registry card in #agent-listings ──
         listings_channel = discord.utils.get(interaction.guild.text_channels, name=AGENT_LISTINGS_CHANNEL)
@@ -1052,7 +1086,7 @@ async def nexus_agent_add(interaction: discord.Interaction, name: str,
 
     except Exception as e:
         log.error(f"Agent add error: {e}")
-        await interaction.followup.send(f"⚠️ Error: `{e}`", ephemeral=True)
+        await interaction.followup.send("⚠️ Something went wrong. Please try again.", ephemeral=True)
 
 
 @nexus_agent_group.command(name="list", description="📋 List all your registered agents.")
@@ -1110,7 +1144,7 @@ async def nexus_agent_list(interaction: discord.Interaction):
 
     except Exception as e:
         log.error(f"Agent list error: {e}")
-        await interaction.followup.send(f"⚠️ Error: `{e}`", ephemeral=True)
+        await interaction.followup.send("⚠️ Something went wrong. Please try again.", ephemeral=True)
 
 
 @nexus_agent_group.command(name="remove", description="🗑️ Deactivate one of your agents.")
@@ -1143,7 +1177,7 @@ async def nexus_agent_remove(interaction: discord.Interaction, agent_did: str):
 
     except Exception as e:
         log.error(f"Agent remove error: {e}")
-        await interaction.followup.send(f"⚠️ Error: `{e}`", ephemeral=True)
+        await interaction.followup.send("⚠️ Something went wrong. Please try again.", ephemeral=True)
 
 
 # ============================================================
@@ -1222,7 +1256,7 @@ async def nexus_wallet(interaction: discord.Interaction,
 
     except Exception as e:
         log.error(f"Wallet error: {e}")
-        await interaction.followup.send(f"⚠️ Error: `{e}`", ephemeral=True)
+        await interaction.followup.send("⚠️ Something went wrong. Please try again.", ephemeral=True)
 
 
 # ============================================================
@@ -1279,7 +1313,7 @@ async def nexus_post(interaction: discord.Interaction, task: str,
 
     except Exception as e:
         log.error(f"Post RFP error: {e}")
-        await interaction.followup.send(f"⚠️ Error: `{e}`")
+        await interaction.followup.send("⚠️ Something went wrong. Please try again.")
 
 
 # ============================================================
@@ -1322,7 +1356,7 @@ async def nexus_market_cmd(interaction: discord.Interaction):
 
     except Exception as e:
         log.error(f"Market browse error: {e}")
-        await interaction.followup.send(f"⚠️ Error: `{e}`")
+        await interaction.followup.send("⚠️ Something went wrong. Please try again.")
 
 
 # ============================================================

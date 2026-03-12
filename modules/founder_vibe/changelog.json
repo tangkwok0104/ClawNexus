@@ -1,8 +1,136 @@
 {
   "entries": [
     {
+      "date": "2026-03-12",
+      "version": "1.2.5",
+      "type": "update",
+      "icon": "star",
+      "title": "🔗 Update Discord invite to permanent link (never expires)",
+      "description": "🔗 Update Discord invite to permanent link (never expires)"
+    },
+    {
+      "date": "2026-03-12",
+      "version": "1.2.4",
+      "type": "update",
+      "icon": "star",
+      "title": "🔧 Fix audit page: include contract source in AWS deployment",
+      "description": "🔧 Fix audit page: include contract source in AWS deployment"
+    },
+    {
+      "date": "2026-03-12",
+      "version": "1.2.3",
+      "type": "update",
+      "icon": "star",
+      "title": "🔧 Fix deployment: include infrastructure/ package in AWS bundle",
+      "description": "🔧 Fix deployment: include infrastructure/ package in AWS bundle"
+    },
+    {
+      "date": "2026-03-12",
+      "version": "1.2.2",
+      "type": "update",
+      "icon": "star",
+      "title": "📊 Fix analytics: use service_role for reads, filter scanner bot paths",
+      "description": "📊 Fix analytics: use service_role for reads, filter scanner bot paths"
+    },
+    {
+      "date": "2026-03-12",
+      "version": "1.2.1",
+      "type": "update",
+      "icon": "star",
+      "title": "🔒 Harden Supabase RLS: switch to service_role key, lock down anon policies",
+      "description": "🔒 Harden Supabase RLS: switch to service_role key, lock down anon policies"
+    },
+    {
+      "date": "2026-03-12",
+      "version": "1.2.0",
+      "type": "announcement",
+      "icon": "rocket",
+      "title": "📋 Add official ROADMAP.md (Phase 0-6) and link from README",
+      "description": "📋 Add official ROADMAP.md (Phase 0-6) and link from README"
+    },
+    {
       "date": "2026-03-11",
-      "version": "1.1.8",
+      "version": "1.1.3",
+      "type": "feature",
+      "icon": "sparkles",
+      "title": "Two-tier DID system — owner + agent identity hierarchy",
+      "description": "feat: two-tier DID system — owner + agent identity hierarchy"
+    },
+    {
+      "date": "2026-03-11",
+      "version": "1.1.2",
+      "type": "feature",
+      "icon": "sparkles",
+      "title": "Upgrade /nexus-register — passport identity, duplicate check, rank system",
+      "description": "feat: upgrade /nexus-register — passport identity, duplicate check, rank system"
+    },
+    {
+      "date": "2026-03-11",
+      "version": "1.1.1",
+      "type": "feature",
+      "icon": "sparkles",
+      "title": "Add /audit page — public smart contract transparency",
+      "description": "feat: add /audit page — public smart contract transparency"
+    },
+    {
+      "date": "2026-03-11",
+      "version": "1.1.0",
+      "type": "announcement",
+      "icon": "rocket",
+      "title": "milestone: �� ClawNexus Escrow v3 deployed to Solana Mainnet",
+      "description": "milestone: �� ClawNexus Escrow v3 deployed to Solana Mainnet"
+    },
+    {
+      "date": "2026-03-11",
+      "version": "1.0.10",
+      "type": "update",
+      "icon": "star",
+      "title": "security: embed real treasury wallet HCyBAE2rnqbcH87KTvwGGZ7EMZZHxxLGtVyQDtwFCEXC",
+      "description": "security: embed real treasury wallet HCyBAE2rnqbcH87KTvwGGZ7EMZZHxxLGtVyQDtwFCEXC"
+    },
+    {
+      "date": "2026-03-11",
+      "version": "1.0.9",
+      "type": "feature",
+      "icon": "sparkles",
+      "title": "Upgrade escrow smart contract to v3",
+      "description": "feat: upgrade escrow smart contract to v3"
+    },
+    {
+      "date": "2026-03-11",
+      "version": "1.0.8",
+      "type": "fix",
+      "icon": "gear",
+      "title": "Gorilla-setup — auto-create roles, handle 403 Forbidden gracefully",
+      "description": "fix: gorilla-setup — auto-create roles, handle 403 Forbidden gracefully"
+    },
+    {
+      "date": "2026-03-11",
+      "version": "1.0.7",
+      "type": "feature",
+      "icon": "sparkles",
+      "title": "Dynamic footer version — reads latest from changelog.json",
+      "description": "feat: dynamic footer version — reads latest from changelog.json"
+    },
+    {
+      "date": "2026-03-11",
+      "version": "1.0.6",
+      "type": "feature",
+      "icon": "sparkles",
+      "title": "🦍 dynamic /gorilla-channel and /gorilla-category commands",
+      "description": "feat: 🦍 dynamic /gorilla-channel and /gorilla-category commands"
+    },
+    {
+      "date": "2026-03-11",
+      "version": "1.0.5",
+      "type": "fix",
+      "icon": "gear",
+      "title": "Deploy script — include gorilla_bot.py and use modular Python paths",
+      "description": "fix: deploy script — include gorilla_bot.py and use modular Python paths"
+    },
+    {
+      "date": "2026-03-11",
+      "version": "1.0.4",
       "type": "feature",
       "icon": "sparkles",
       "title": "🦍 Gorilla Community Manager bot — server scaffolding & auto-roles",
@@ -10,7 +138,7 @@
     },
     {
       "date": "2026-03-11",
-      "version": "1.1.7",
+      "version": "1.0.3",
       "type": "feature",
       "icon": "sparkles",
       "title": "Auto-assign AI-Mentor and AI-Student roles on slash commands",
@@ -18,7 +146,7 @@
     },
     {
       "date": "2026-03-11",
-      "version": "1.1.6",
+      "version": "1.0.2",
       "type": "fix",
       "icon": "gear",
       "title": "Match Genesis role name to Discord (Genesis-Founder with hyphen)",
@@ -26,139 +154,11 @@
     },
     {
       "date": "2026-03-11",
-      "version": "1.1.5",
+      "version": "1.0.1",
       "type": "feature",
       "icon": "sparkles",
       "title": "Genesis automation — auto-role, auto-credits, dynamic Founder's Log",
       "description": "feat: Genesis automation — auto-role, auto-credits, dynamic Founder's Log"
-    },
-    {
-      "date": "2026-03-11",
-      "version": "1.1.4",
-      "type": "feature",
-      "icon": "sparkles",
-      "title": "Discord conversion magnets — Genesis banner, Founder's Log, CTA rewrite",
-      "description": "feat: Discord conversion magnets — Genesis banner, Founder's Log, CTA rewrite"
-    },
-    {
-      "date": "2026-03-11",
-      "version": "1.1.3",
-      "type": "update",
-      "icon": "gear",
-      "title": "Open Core + Modules architecture",
-      "description": "refactor: Open Core + Modules architecture"
-    },
-    {
-      "date": "2026-03-11",
-      "version": "1.1.2",
-      "type": "update",
-      "icon": "package",
-      "title": "Update changelog.json (9 entries) and package script",
-      "description": "chore: update changelog.json (9 entries) and package script"
-    },
-    {
-      "date": "2026-03-11",
-      "version": "1.1.1",
-      "type": "feature",
-      "icon": "sparkles",
-      "title": "Five Tribes ecosystem section, C.C.P. SPEC.md, /developers page",
-      "description": "feat: Five Tribes ecosystem section, C.C.P. SPEC.md, /developers page"
-    },
-    {
-      "date": "2026-03-11",
-      "version": "1.1.0",
-      "type": "announcement",
-      "icon": "rocket",
-      "title": "Phase 7 complete: mainnet configs, 16/16 tests, adversarial security audit",
-      "description": "Phase 7 complete: mainnet configs, 16/16 tests, adversarial security audit"
-    },
-    {
-      "date": "2026-03-10",
-      "version": "1.0.11",
-      "type": "feature",
-      "icon": "sparkles",
-      "title": "Add Origin Story page with timeline + i18n support",
-      "description": "feat(ui): add Origin Story page with timeline + i18n support"
-    },
-    {
-      "date": "2026-03-10",
-      "version": "1.0.10",
-      "type": "fix",
-      "icon": "gear",
-      "title": "Include static/ directory in AWS deployment package",
-      "description": "fix(deploy): include static/ directory in AWS deployment package"
-    },
-    {
-      "date": "2026-03-10",
-      "version": "1.0.9",
-      "type": "update",
-      "icon": "book",
-      "title": "Add landing page screenshots to README",
-      "description": "docs: add landing page screenshots to README"
-    },
-    {
-      "date": "2026-03-10",
-      "version": "1.0.8",
-      "type": "feature",
-      "icon": "sparkles",
-      "title": "Upgrade README + embed hero video + full Founder's Portal UI",
-      "description": "feat: upgrade README + embed hero video + full Founder's Portal UI"
-    },
-    {
-      "date": "2026-03-10",
-      "version": "1.0.7",
-      "type": "feature",
-      "icon": "sparkles",
-      "title": "Add Hero pulse animation + scrolling Top Claws marquee",
-      "description": "feat(ui): add Hero pulse animation + scrolling Top Claws marquee"
-    },
-    {
-      "date": "2026-03-10",
-      "version": "1.0.6",
-      "type": "feature",
-      "icon": "sparkles",
-      "title": "Implement Phase 0 onboarding, role comparison, and custom CTAs",
-      "description": "feat(ui): implement Phase 0 onboarding, role comparison, and custom CTAs"
-    },
-    {
-      "date": "2026-03-10",
-      "version": "1.0.5",
-      "type": "fix",
-      "icon": "gear",
-      "title": "Update Discord links to community invite",
-      "description": "fix(ui): update Discord links to community invite"
-    },
-    {
-      "date": "2026-03-10",
-      "version": "1.0.4",
-      "type": "fix",
-      "icon": "gear",
-      "title": "Update Discord OAuth client_id",
-      "description": "fix(ui): update Discord OAuth client_id"
-    },
-    {
-      "date": "2026-03-10",
-      "version": "1.0.3",
-      "type": "feature",
-      "icon": "sparkles",
-      "title": "Implement Cyber-Organic Founder's Portal UI",
-      "description": "feat(ui): implement Cyber-Organic Founder's Portal UI"
-    },
-    {
-      "date": "2026-03-10",
-      "version": "1.0.2",
-      "type": "update",
-      "icon": "book",
-      "title": "Update README to premium showcase format",
-      "description": "docs: Update README to premium showcase format"
-    },
-    {
-      "date": "2026-03-10",
-      "version": "1.0.1",
-      "type": "update",
-      "icon": "star",
-      "title": "Initial commit: ClawNexus v6.0",
-      "description": "Initial commit: ClawNexus v6.0"
     }
   ]
 }
