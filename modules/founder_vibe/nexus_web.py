@@ -3496,16 +3496,26 @@ async def audit_page(request: Request):
     """Public audit page showing smart contract code, architecture, and security."""
 
     # Read the smart contract source code for display
-    contract_path = os.path.join(
-        os.path.dirname(__file__), "..", "..",
-        "contracts", "clawnexus_escrow", "programs",
-        "clawnexus_escrow", "src", "lib.rs"
-    )
-    try:
-        with open(contract_path, "r", encoding="utf-8") as f:
-            contract_code = html_lib.escape(f.read())
-    except Exception:
-        contract_code = "// Contract source temporarily unavailable"
+    # Try multiple paths to support both local dev and flat AWS deployment
+    _contract_candidates = [
+        os.path.join(os.path.dirname(__file__), "..", "..",
+                     "contracts", "clawnexus_escrow", "programs",
+                     "clawnexus_escrow", "src", "lib.rs"),
+        os.path.join(os.path.dirname(__file__),
+                     "contracts", "clawnexus_escrow", "programs",
+                     "clawnexus_escrow", "src", "lib.rs"),
+        os.path.join(os.getcwd(),
+                     "contracts", "clawnexus_escrow", "programs",
+                     "clawnexus_escrow", "src", "lib.rs"),
+    ]
+    contract_code = "// Contract source temporarily unavailable"
+    for contract_path in _contract_candidates:
+        try:
+            with open(contract_path, "r", encoding="utf-8") as f:
+                contract_code = html_lib.escape(f.read())
+            break
+        except Exception:
+            continue
 
     body = f"""
     <style>

@@ -52,6 +52,14 @@ if [ -d "modules/founder_vibe/static" ]; then
     cp -r modules/founder_vibe/static $PKG_DIR/
 fi
 
+# Step 5b: Copy smart contract source for audit page
+CONTRACT_SRC="contracts/clawnexus_escrow/programs/clawnexus_escrow/src/lib.rs"
+if [ -f "$CONTRACT_SRC" ]; then
+    echo "📁 Copying contract source..."
+    mkdir -p "$PKG_DIR/contracts/clawnexus_escrow/programs/clawnexus_escrow/src"
+    cp "$CONTRACT_SRC" "$PKG_DIR/contracts/clawnexus_escrow/programs/clawnexus_escrow/src/"
+fi
+
 # Step 6: Copy requirements and env
 cp requirements.txt $PKG_DIR/
 if [ -f ".env" ]; then
@@ -80,6 +88,9 @@ if [ -d "infrastructure" ]; then
     cp -r infrastructure/* "$DEPLOY_DIR/infrastructure/"
     # Clear stale Python cache
     rm -rf "$DEPLOY_DIR/infrastructure/__pycache__"
+fi
+if [ -d "contracts" ]; then
+    cp -r contracts "$DEPLOY_DIR/"
 fi
 if [ -d "static" ]; then
     cp -r static "$DEPLOY_DIR/"
