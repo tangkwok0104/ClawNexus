@@ -24,11 +24,17 @@ cp core/clawnexus_identity.py $PKG_DIR/
 cp core/nexus_relay.py $PKG_DIR/
 cp core/nexus_trust.py $PKG_DIR/
 
-# Step 3: Copy infrastructure
+# Step 3: Copy infrastructure (flat + package structure for Python imports)
 echo "📁 Copying infrastructure..."
 cp infrastructure/nexus_db.py $PKG_DIR/
 cp infrastructure/nexus_vault.py $PKG_DIR/
 cp infrastructure/solana_client.py $PKG_DIR/
+# Also preserve the package directory so 'from infrastructure import X' works on the server
+mkdir -p $PKG_DIR/infrastructure
+cp infrastructure/__init__.py $PKG_DIR/infrastructure/ 2>/dev/null || touch $PKG_DIR/infrastructure/__init__.py
+cp infrastructure/nexus_db.py $PKG_DIR/infrastructure/
+cp infrastructure/nexus_vault.py $PKG_DIR/infrastructure/
+cp infrastructure/solana_client.py $PKG_DIR/infrastructure/
 
 # Step 4: Copy founder_vibe module (web portal)
 echo "📁 Copying founder_vibe module..."
@@ -69,6 +75,12 @@ mkdir -p "$DEPLOY_DIR"
 cp *.py "$DEPLOY_DIR/"
 cp *.json "$DEPLOY_DIR/" 2>/dev/null || true
 cp requirements.txt "$DEPLOY_DIR/"
+if [ -d "infrastructure" ]; then
+    mkdir -p "$DEPLOY_DIR/infrastructure"
+    cp -r infrastructure/* "$DEPLOY_DIR/infrastructure/"
+    # Clear stale Python cache
+    rm -rf "$DEPLOY_DIR/infrastructure/__pycache__"
+fi
 if [ -d "static" ]; then
     cp -r static "$DEPLOY_DIR/"
 fi
