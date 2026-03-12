@@ -2840,9 +2840,21 @@ table.analytics-tbl tr:hover td { background: rgba(255,255,255,0.02); }
 
 def _query_analytics():
     """Pull all analytics aggregates from Supabase."""
-    sb = db.supabase
+    sb = db.supabase_admin  # Use service_role for reliable server-side reads
     now = datetime.now(timezone.utc)
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+
+    # Paths to exclude from analytics (scanner/bot noise)
+    _SCANNER_PATHS = {
+        "/.env", "/.git", "/.git/config", "/.git/HEAD",
+        "/wp-admin", "/wp-login.php", "/wp-content",
+        "/phpmyadmin", "/.well-known", "/xmlrpc.php",
+        "/robots.txt", "/sitemap.xml", "/favicon.ico",
+        "/dns-query", "/resolve", "/query",
+    }
+
+    def _is_scanner_path(path: str) -> bool:
+        return path in _SCANNER_PATHS or path.startswith("/.") or path.startswith("/wp-")
 
     # Total views
     res = sb.table("page_views").select("id", count="exact").execute()
@@ -2857,12 +2869,13 @@ def _query_analytics():
     today_views = len(res_today.data) if res_today.data else 0
     today_unique = len(set(r["ip_hash"] for r in (res_today.data or []) if r.get("ip_hash")))
 
-    # Top pages
+    # Top pages (filtered)
     res_pages = sb.table("page_views").select("path").execute()
     page_counts = {}
     for r in (res_pages.data or []):
         p = r["path"]
-        page_counts[p] = page_counts.get(p, 0) + 1
+        if not _is_scanner_path(p):
+            page_counts[p] = page_counts.get(p, 0) + 1
     top_pages = sorted(page_counts.items(), key=lambda x: x[1], reverse=True)[:10]
 
     # Top referrers
