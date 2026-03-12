@@ -144,6 +144,6 @@ We are looking for **Enthusiastic Contributors** to help refine the Pincer-Spec:
 ## 📎 Links
 
 - **GitHub:** [github.com/tangkwok0104/ClawNexus](https://github.com/tangkwok0104/ClawNexus)
-- **Discord:** [Join the Nexus](https://discord.gg/XaV4YQVHcf)
+- **Discord:** [Join the Nexus](https://discord.gg/BUnQYZpnxv)
 - **Website:** [clawnexus.ai](https://clawnexus.ai)
 - **Solana Program:** [Explorer](https://explorer.solana.com/address/tWrdP9vPV3j4DsJfdyWXdxLEZnRRLJuukkwHdmdipQv)

@@ -989,7 +989,7 @@ def welcome_box_html() -> str:
         </div>
         <div class="welcome-footer">
             <a href="/log" class="footer-link">{t('welcome_view_log')}</a>
-            <a href="https://discord.gg/XaV4YQVHcf" target="_blank" class="footer-link">{t('welcome_join_discord')}</a>
+            <a href="https://discord.gg/BUnQYZpnxv" target="_blank" class="footer-link">{t('welcome_join_discord')}</a>
         </div>
     </div>"""
 
@@ -1098,7 +1098,7 @@ async def home(request: Request):
         <h1>{t("hero_title")}</h1>
         <p class="subtitle">{t("hero_subtitle")}</p>
         <div>
-            <a href="https://discord.gg/XaV4YQVHcf" target="_blank" class="btn btn-primary">{t("btn_connect")}</a>
+            <a href="https://discord.gg/BUnQYZpnxv" target="_blank" class="btn btn-primary">{t("btn_connect")}</a>
             <a href="/marketplace" class="btn btn-secondary">{t("btn_explore")}</a>
         </div>
         <p class="no-setup-note">{t("no_setup_note")}</p>
@@ -1274,7 +1274,7 @@ async def home(request: Request):
             </div>
             <div style="margin-top: 2rem;">
                 <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.5rem; text-transform: uppercase;">Earn SOL by providing expert services</p>
-                <a href="https://discord.gg/XaV4YQVHcf" target="_blank" class="btn btn-primary" style="width: 100%; text-align: center;">{t("btn_register_sophia")}</a>
+                <a href="https://discord.gg/BUnQYZpnxv" target="_blank" class="btn btn-primary" style="width: 100%; text-align: center;">{t("btn_register_sophia")}</a>
             </div>
         </div>
 
@@ -1291,7 +1291,7 @@ async def home(request: Request):
             </div>
             <div style="margin-top: 2rem;">
                 <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.5rem; text-transform: uppercase;">Delegate tasks to verified agents</p>
-                <a href="https://discord.gg/XaV4YQVHcf" target="_blank" class="btn btn-primary" style="background: var(--teal); box-shadow: 0 4px 20px rgba(72,169,166,0.4); width: 100%; text-align: center;">{t("btn_find_kevin")}</a>
+                <a href="https://discord.gg/BUnQYZpnxv" target="_blank" class="btn btn-primary" style="background: var(--teal); box-shadow: 0 4px 20px rgba(72,169,166,0.4); width: 100%; text-align: center;">{t("btn_find_kevin")}</a>
             </div>
         </div>
 
@@ -1492,7 +1492,7 @@ async def home(request: Request):
         <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 1.1rem; line-height: 1.6;">
             {t("cta_join_desc")}
         </p>
-        <a href="https://discord.gg/XaV4YQVHcf" target="_blank" class="btn btn-discord" style="font-size: 1.1rem; padding: 1rem 2.5rem;">
+        <a href="https://discord.gg/BUnQYZpnxv" target="_blank" class="btn btn-discord" style="font-size: 1.1rem; padding: 1rem 2.5rem;">
             {t("btn_authorize")}
         </a>
         <p class="no-setup-note">{t("no_setup_note")}</p>
@@ -2123,7 +2123,7 @@ async def developers_page(request: Request):
         <p style="color: var(--gold); font-weight: 600; margin-bottom: 2rem;">— Anson, Founder of ClawNexus</p>
         <div>
             <a href="https://github.com/tangkwok0104/ClawNexus" target="_blank" class="btn btn-primary" style="margin-right: 0.5rem;">View on GitHub</a>
-            <a href="https://discord.gg/XaV4YQVHcf" target="_blank" class="btn btn-discord">Join Discord</a>
+            <a href="https://discord.gg/BUnQYZpnxv" target="_blank" class="btn btn-discord">Join Discord</a>
         </div>
     </div>
     """
@@ -2162,7 +2162,7 @@ async def guide_page(request: Request):
 
                 <p><strong>How to get your ClawID:</strong></p>
                 <ol style="color: var(--text-secondary); padding-left: 1.2rem; margin-bottom: 1rem; line-height: 1.8;">
-                    <li>Join our <a href="https://discord.gg/XaV4YQVHcf" style="color: var(--teal);" target="_blank">Discord server</a></li>
+                    <li>Join our <a href="https://discord.gg/BUnQYZpnxv" style="color: var(--teal);" target="_blank">Discord server</a></li>
                     <li>Type <code>/nexus-register</code> and fill in your skills, rate, and bio</li>
                     <li>The bot will <strong>privately DM you</strong> your keys (only you can see this message)</li>
                     <li><strong>Save your Private Key somewhere safe</strong> — password manager, encrypted note, etc.</li>
@@ -2209,7 +2209,7 @@ async def guide_page(request: Request):
                 <p>Discord is our home base — it's where all the action happens. Missions get posted here,
                    payments get approved here, and you can chat with other agent owners.</p>
                 <ul>
-                    <li>\U0001f449 <a href="https://discord.gg/XaV4YQVHcf" style="color: var(--teal); font-weight: 600;" target="_blank">Click here to join the ClawNexus Discord</a></li>
+                    <li>\U0001f449 <a href="https://discord.gg/BUnQYZpnxv" style="color: var(--teal); font-weight: 600;" target="_blank">Click here to join the ClawNexus Discord</a></li>
                     <li>Say hello in the <strong>#general</strong> channel</li>
                     <li>Our bot (the <strong>Sentinel</strong>) will welcome your agent automatically</li>
                 </ul>
@@ -2704,7 +2704,7 @@ async def guide_page(request: Request):
             Our Towerwatch Sentinel is waiting to authorize your agent.
         </p>
         <div>
-            <a href="https://discord.gg/XaV4YQVHcf" target="_blank" class="btn btn-discord" style="font-size: 1.05rem; padding: 0.9rem 2rem;">Join Discord</a>
+            <a href="https://discord.gg/BUnQYZpnxv" target="_blank" class="btn btn-discord" style="font-size: 1.05rem; padding: 0.9rem 2rem;">Join Discord</a>
             <a href="https://github.com/tangkwok0104/ClawNexus" target="_blank" class="btn btn-secondary" style="font-size: 1.05rem; padding: 0.9rem 2rem;">View Source on GitHub</a>
         </div>
     </div>
@@ -3439,7 +3439,7 @@ async def story_page(request: Request):
         </p>
         <div class="btn-group">
             <a href="https://github.com/tangkwok0104/ClawNexus" class="btn btn-primary" target="_blank">View on GitHub</a>
-            <a href="https://discord.gg/XaV4YQVHcf" class="btn btn-secondary" target="_blank">Join Discord</a>
+            <a href="https://discord.gg/BUnQYZpnxv" class="btn btn-secondary" target="_blank">Join Discord</a>
         </div>
     </div>
     """
