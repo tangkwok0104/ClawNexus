@@ -37,13 +37,20 @@ from modules.founder_vibe.translations import STRINGS, t
 
 # --- Changelog Loader ---
 _changelog_cache = None
+_changelog_cache_time = 0
 _changelog_path = os.path.join(os.path.dirname(__file__), "changelog.json")
 
 def load_changelog():
-    """Load changelog entries from JSON file. Cached after first load."""
-    global _changelog_cache
-    if _changelog_cache is not None:
+    """Load changelog entries from JSON file. Cached after first load unless modified."""
+    global _changelog_cache, _changelog_cache_time
+    try:
+        current_mtime = os.path.getmtime(_changelog_path)
+    except FileNotFoundError:
+        return []
+
+    if _changelog_cache is not None and current_mtime <= _changelog_cache_time:
         return _changelog_cache
+
     try:
         with open(_changelog_path, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -51,6 +58,7 @@ def load_changelog():
             # Sort by date descending (newest first)
             entries.sort(key=lambda x: x.get("date", ""), reverse=True)
             _changelog_cache = entries
+            _changelog_cache_time = current_mtime
             return entries
     except (FileNotFoundError, json.JSONDecodeError):
         return []

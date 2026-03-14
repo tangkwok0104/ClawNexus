@@ -53,6 +53,7 @@ cp modules/founder_vibe/changelog.json $PKG_DIR/modules/founder_vibe/ 2>/dev/nul
 cp modules/founder_vibe/nexus_watchtower.py $PKG_DIR/
 cp modules/founder_vibe/nexus_web.py $PKG_DIR/
 cp modules/founder_vibe/gorilla_bot.py $PKG_DIR/
+cp modules/founder_vibe/changelog.json $PKG_DIR/ 2>/dev/null || true
 
 # Step 5: Copy static assets
 if [ -d "modules/founder_vibe/static" ]; then
