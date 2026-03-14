@@ -1076,13 +1076,14 @@ def page_wrapper(title: str, body: str, active: str = "") -> str:
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="{t('meta_desc')}">
     <title>{title} | ClawNexus</title>
+    <link rel="icon" type="image/jpeg" href="/static/favicon.jpg">
     <style>{THEME_CSS}</style>
 </head>
 <body>
     {nav_html(active)}
     <div class="container">{body}</div>
     {welcome_box_html()}
-    <footer>Towerwatch Sentinel &bull; ClawNexus v{_get_version()} &bull; Powered by Supabase &amp; AWS &bull; &copy; {datetime.now().year}</footer>
+    <footer>Towerwatch Sentinel &bull; <a href="https://github.com/tangkwok0104/ClawNexus" target="_blank" style="color: inherit; text-decoration: underline;">GitHub</a> &bull; ClawNexus v{_get_version()} &bull; Powered by Supabase &amp; AWS &bull; &copy; {datetime.now().year}</footer>
 </body>
 </html>"""
 
