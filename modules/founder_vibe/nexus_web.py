@@ -3465,7 +3465,7 @@ async def log_page(request: Request):
     </div>
     """
 
-    return page_wrapper(t("log_title"), body, "log")
+    return page_wrapper("Project Log", body, "log")
 
 
 @app.get("/story", response_class=HTMLResponse)
