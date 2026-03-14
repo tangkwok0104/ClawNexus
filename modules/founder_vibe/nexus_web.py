@@ -972,6 +972,12 @@ footer {
     font-size: 0.85rem;
     margin-top: 0.5rem;
     font-style: italic;
+    animation: gentleJump 2.5s ease-in-out infinite;
+}
+@keyframes gentleJump {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-8px); }
+    60% { transform: translateY(-4px); }
 }
 """
 
