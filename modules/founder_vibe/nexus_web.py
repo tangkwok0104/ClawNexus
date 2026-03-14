@@ -1076,7 +1076,7 @@ def page_wrapper(title: str, body: str, active: str = "") -> str:
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="{t('meta_desc')}">
     <title>{title} | ClawNexus</title>
-    <link rel="icon" type="image/jpeg" href="/static/favicon.jpg">
+    <link rel="icon" type="image/png" href="/static/favicon.png">
     <style>{THEME_CSS}</style>
 </head>
 <body>
