@@ -38,13 +38,21 @@ cp infrastructure/solana_client.py $PKG_DIR/infrastructure/
 
 # Step 4: Copy founder_vibe module (web portal)
 echo "📁 Copying founder_vibe module..."
-cp modules/founder_vibe/nexus_market.py $PKG_DIR/
-cp modules/founder_vibe/nexus_registry.py $PKG_DIR/
+mkdir -p $PKG_DIR/modules/founder_vibe
+
+# Copy to correct python module path to prevent stale cache imports
+cp modules/founder_vibe/nexus_market.py $PKG_DIR/modules/founder_vibe/
+cp modules/founder_vibe/nexus_registry.py $PKG_DIR/modules/founder_vibe/
+cp modules/founder_vibe/nexus_watchtower.py $PKG_DIR/modules/founder_vibe/
+cp modules/founder_vibe/nexus_web.py $PKG_DIR/modules/founder_vibe/
+cp modules/founder_vibe/translations.py $PKG_DIR/modules/founder_vibe/
+cp modules/founder_vibe/gorilla_bot.py $PKG_DIR/modules/founder_vibe/
+cp modules/founder_vibe/changelog.json $PKG_DIR/modules/founder_vibe/ 2>/dev/null || true
+
+# Copy entrypoints to root for systemd
 cp modules/founder_vibe/nexus_watchtower.py $PKG_DIR/
 cp modules/founder_vibe/nexus_web.py $PKG_DIR/
-cp modules/founder_vibe/translations.py $PKG_DIR/
 cp modules/founder_vibe/gorilla_bot.py $PKG_DIR/
-cp modules/founder_vibe/changelog.json $PKG_DIR/
 
 # Step 5: Copy static assets
 if [ -d "modules/founder_vibe/static" ]; then
@@ -88,6 +96,11 @@ if [ -d "infrastructure" ]; then
     cp -r infrastructure/* "$DEPLOY_DIR/infrastructure/"
     # Clear stale Python cache
     rm -rf "$DEPLOY_DIR/infrastructure/__pycache__"
+fi
+if [ -d "modules" ]; then
+    mkdir -p "$DEPLOY_DIR/modules"
+    cp -r modules/* "$DEPLOY_DIR/modules/"
+    find "$DEPLOY_DIR/modules" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 fi
 if [ -d "contracts" ]; then
     cp -r contracts "$DEPLOY_DIR/"

@@ -23,7 +23,7 @@ def post_rfp(client_did: str, task_description: str,
         "status": "OPEN"
     }
 
-    res = db.supabase.table("rfps").insert(data).execute()
+    res = db.supabase_admin.table("rfps").insert(data).execute()
 
     if res.data:
         rfp = res.data[0]
@@ -69,7 +69,7 @@ def match_rfp(rfp_id: str) -> list:
 
 def fill_rfp(rfp_id: str, agent_did: str, mission_id: str = None) -> dict:
     """Mark an RFP as FILLED by a specific agent."""
-    db.supabase.table("rfps").update({
+    db.supabase_admin.table("rfps").update({
         "status": "FILLED",
         "filled_by": agent_did,
         "mission_id": mission_id

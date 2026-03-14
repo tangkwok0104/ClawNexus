@@ -1,6 +1,14 @@
 {
   "entries": [
     {
+      "date": "2026-03-13",
+      "version": "1.2.6",
+      "type": "update",
+      "icon": "star",
+      "title": "Auto-sync backup at 2026-03-13 08:54:09",
+      "description": "Auto-sync backup at 2026-03-13 08:54:09"
+    },
+    {
       "date": "2026-03-12",
       "version": "1.2.5",
       "type": "update",
@@ -82,7 +90,7 @@
     },
     {
       "date": "2026-03-11",
-      "version": "1.0.10",
+      "version": "1.0.9",
       "type": "update",
       "icon": "star",
       "title": "security: embed real treasury wallet HCyBAE2rnqbcH87KTvwGGZ7EMZZHxxLGtVyQDtwFCEXC",
@@ -90,7 +98,7 @@
     },
     {
       "date": "2026-03-11",
-      "version": "1.0.9",
+      "version": "1.0.8",
       "type": "feature",
       "icon": "sparkles",
       "title": "Upgrade escrow smart contract to v3",
@@ -98,7 +106,7 @@
     },
     {
       "date": "2026-03-11",
-      "version": "1.0.8",
+      "version": "1.0.7",
       "type": "fix",
       "icon": "gear",
       "title": "Gorilla-setup — auto-create roles, handle 403 Forbidden gracefully",
@@ -106,7 +114,7 @@
     },
     {
       "date": "2026-03-11",
-      "version": "1.0.7",
+      "version": "1.0.6",
       "type": "feature",
       "icon": "sparkles",
       "title": "Dynamic footer version — reads latest from changelog.json",
@@ -114,7 +122,7 @@
     },
     {
       "date": "2026-03-11",
-      "version": "1.0.6",
+      "version": "1.0.5",
       "type": "feature",
       "icon": "sparkles",
       "title": "🦍 dynamic /gorilla-channel and /gorilla-category commands",
@@ -122,7 +130,7 @@
     },
     {
       "date": "2026-03-11",
-      "version": "1.0.5",
+      "version": "1.0.4",
       "type": "fix",
       "icon": "gear",
       "title": "Deploy script — include gorilla_bot.py and use modular Python paths",
@@ -130,7 +138,7 @@
     },
     {
       "date": "2026-03-11",
-      "version": "1.0.4",
+      "version": "1.0.3",
       "type": "feature",
       "icon": "sparkles",
       "title": "🦍 Gorilla Community Manager bot — server scaffolding & auto-roles",
@@ -138,7 +146,7 @@
     },
     {
       "date": "2026-03-11",
-      "version": "1.0.3",
+      "version": "1.0.2",
       "type": "feature",
       "icon": "sparkles",
       "title": "Auto-assign AI-Mentor and AI-Student roles on slash commands",
@@ -146,19 +154,11 @@
     },
     {
       "date": "2026-03-11",
-      "version": "1.0.2",
+      "version": "1.0.1",
       "type": "fix",
       "icon": "gear",
       "title": "Match Genesis role name to Discord (Genesis-Founder with hyphen)",
       "description": "fix: match Genesis role name to Discord (Genesis-Founder with hyphen)"
-    },
-    {
-      "date": "2026-03-11",
-      "version": "1.0.1",
-      "type": "feature",
-      "icon": "sparkles",
-      "title": "Genesis automation — auto-role, auto-credits, dynamic Founder's Log",
-      "description": "feat: Genesis automation — auto-role, auto-credits, dynamic Founder's Log"
     }
   ]
 }
